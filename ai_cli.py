@@ -34,10 +34,11 @@ console = Console()
 
 
 def get_multiline_input() -> str:
-    """Get multi-line input from user with Enter to send, Ctrl+Enter for new lines."""
+    """Get multi-line input from user with Enter to send, Shift+Enter for new lines."""
     try:
         from prompt_toolkit.key_binding import KeyBindings
         from prompt_toolkit.shortcuts import prompt as ptk_prompt
+        from prompt_toolkit.styles import Style
         
         # Create key bindings
         kb = KeyBindings()
@@ -47,16 +48,22 @@ def get_multiline_input() -> str:
             """Enter key sends the message."""
             event.app.exit(result=event.app.current_buffer.text)
         
-        @kb.add('c-j')  # Ctrl+J for new line
+        @kb.add('shift-enter')  # Shift+Enter for new line
         def _(event):
-            """Ctrl+J creates a new line."""
-            event.app.current_buffer.insert_text('\n')
+            """Shift+Enter creates a new line."""
+            event.current_buffer.insert_text('\n')
         
-        # Get input with custom key bindings
+        # Define the style for the prompt
+        style = Style.from_dict({
+            'prompt': 'ansiblue bold',
+        })
+        
+        # Get input with custom key bindings and styling
         text = ptk_prompt(
-            '[bold cyan]You:[/bold cyan] ',
+            [('class:prompt', 'You: ')],
             multiline=True,
             key_bindings=kb,
+            style=style,
             mouse_support=True
         )
         
@@ -68,7 +75,7 @@ def get_multiline_input() -> str:
         console.print("[yellow]Using simple input mode (type 'END' to finish multi-line input)[/yellow]")
         
         lines = []
-        console.print("[bold cyan]You:[/bold cyan] ", end="")
+        console.print("[blue]You:[/blue] ", end="")
         
         while True:
             try:
@@ -146,7 +153,7 @@ def run_chat_interface() -> None:
     console.print("[yellow]Type 'models' to see available AI models[/yellow]")
     console.print("[yellow]Type 'switch' to change AI models[/yellow]")
     console.print("[yellow]Type '/new' to start a new chat session[/yellow]")
-    console.print("[yellow]For multi-line input: press Ctrl+J for new lines, Enter to send message[/yellow]")
+    console.print("[yellow]For multi-line input: press Shift+Enter for new lines, Enter to send message[/yellow]")
     console.print("[blue]" + "="*50 + "[/blue]\n")
 
     while True:
@@ -226,11 +233,9 @@ def handle_text_generation(prompt: str, token: str = "", conversation_history: l
     # Try to render as markdown with improved formatting
     try:
         # Clean up the response for better markdown rendering
-        cleaned_response = clean_response_for_markdown(response)
+        cleaned_response = clean_response_for_markdown(response, prompt)
         
-        # Debug: Show what we're trying to render
-        console.print(f"[dim]Debug - Original response: {repr(response)}[/dim]")
-        console.print(f"[dim]Debug - Cleaned response: {repr(cleaned_response)}[/dim]")
+        # Debug output removed for cleaner interface
         
         # Create a panel with the markdown content for better visual separation
         markdown = Markdown(cleaned_response, code_theme="monokai")
@@ -596,18 +601,36 @@ def get_available_image_models() -> list:
         return ['flux', 'kontext', 'turbo', 'nanobanana', 'gptimage']
 
 
-def clean_response_for_markdown(response: str) -> str:
+def clean_response_for_markdown(response: str, user_prompt: str = "") -> str:
     """Clean AI response for better markdown rendering."""
     cleaned = response
     
     # Remove debug output to clean up the interface
     # console.print(f"[dim]Original response: {repr(response[:100])}[/dim]")
     
-    # Fix bold text - ensure proper ** format
-    cleaned = re.sub(r'(?<!\*)\*([^*\n]+?)\*(?!\*)', r'**\1**', cleaned)
+    # Apply formatting based on user request if AI didn't provide markdown
+    formatting_applied = False
+    if user_prompt and not re.search(r'\*{1,2}|\_{1,2}|`{1,3}', cleaned):
+        # Check if user requested italic formatting first (more specific)
+        if re.search(r'\b(italic|italics|emphasize with italics)\b', user_prompt.lower()):
+            # Apply italic formatting to the entire response if it's short and simple
+            if len(cleaned.strip()) < 50 and '\n' not in cleaned:
+                cleaned = f"*{cleaned.strip()}*"
+                formatting_applied = True
+        # Check if user requested bold formatting (broader terms)
+        elif re.search(r'\b(bold|boldly|emphasize|highlight)\b', user_prompt.lower()):
+            # Apply bold formatting to the entire response if it's short and simple
+            if len(cleaned.strip()) < 50 and '\n' not in cleaned:
+                cleaned = f"**{cleaned.strip()}**"
+                formatting_applied = True
     
-    # Fix italic text - ensure proper * format
-    cleaned = re.sub(r'(?<!\*)_([^_\n]+?)_(?!\*)', r'*\1*', cleaned)
+    # Only apply automatic formatting fixes if we didn't apply user-requested formatting
+    if not formatting_applied:
+        # Fix bold text - ensure proper ** format
+        cleaned = re.sub(r'(?<!\*)\*([^*\n]+?)\*(?!\*)', r'**\1**', cleaned)
+        
+        # Fix italic text - ensure proper * format
+        cleaned = re.sub(r'(?<!\*)_([^_\n]+?)_(?!\*)', r'*\1*', cleaned)
     
     # Fix links - ensure proper [text](url) format
     # Handle cases where links might have extra spaces or formatting issues
