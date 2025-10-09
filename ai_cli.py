@@ -34,7 +34,7 @@ console = Console()
 
 
 def get_multiline_input() -> str:
-    """Get multi-line input from user with Enter to send, Shift+Enter for new lines."""
+    """Get multi-line input from user with Enter to send, Ctrl+J for new lines."""
     try:
         from prompt_toolkit.key_binding import KeyBindings
         from prompt_toolkit.shortcuts import prompt as ptk_prompt
@@ -48,9 +48,9 @@ def get_multiline_input() -> str:
             """Enter key sends the message."""
             event.app.exit(result=event.app.current_buffer.text)
         
-        @kb.add('shift-enter')  # Shift+Enter for new line
+        @kb.add('c-n')  # Ctrl+n for new line (alternative to Shift+Enter)
         def _(event):
-            """Shift+Enter creates a new line."""
+            """Ctrl+J creates a new line."""
             event.current_buffer.insert_text('\n')
         
         # Define the style for the prompt
@@ -153,7 +153,7 @@ def run_chat_interface() -> None:
     console.print("[yellow]Type 'models' to see available AI models[/yellow]")
     console.print("[yellow]Type 'switch' to change AI models[/yellow]")
     console.print("[yellow]Type '/new' to start a new chat session[/yellow]")
-    console.print("[yellow]For multi-line input: press Shift+Enter for new lines, Enter to send message[/yellow]")
+    console.print("[yellow]For multi-line input: press Ctrl+J for new lines, Enter to send message[/yellow]")
     console.print("[blue]" + "="*50 + "[/blue]\n")
 
     while True:
