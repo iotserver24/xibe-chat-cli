@@ -35,7 +35,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
-        password: pypi-AgEIcHlwaS5vcmcCJGZjYWM1ZjE4LTIwYzUtNDc2Yy1hY2VkLTgxYzZjOTI2NzdmYQACKlszLCIzN2EzMGJlOC02OGM5LTRmYTQtYWYwNi02Zjc2ZDVlY2MyMDgiXQAABiCKfWAPr6-pOAd1xz78VEvmjZKPVMBctGMMKIKuGvgc_A
+        password: pypi-AgEIcHlwaS5vcmcCJGRmYmYyMDE1LWYxN2EtNGE3Ni1hZWJjLTRhZjExN2NlMTc2MQACKlszLCIzN2EzMGJlOC02OGM5LTRmYTQtYWYwNi02Zjc2ZDVlY2MyMDgiXQAABiAKuZZmJLxnUDuNEjJgL8pgyveL1x7MyObpVAULBAggXg
         
     - name: Create Release
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
