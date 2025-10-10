@@ -18,13 +18,6 @@ except ImportError:
     print("Error: pyfiglet is required. Install it with: pip install pyfiglet")
     exit(1)
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()  # Load environment variables from .env file
-except ImportError:
-    print("Error: python-dotenv is required. Install it with: pip install python-dotenv")
-    exit(1)
-
 import requests
 from rich.console import Console
 from rich.panel import Panel
@@ -37,6 +30,9 @@ console = Console()
 
 # Configuration file path
 CONFIG_FILE = Path("xibe_chat_config.json")
+
+# Hardcoded API token for premium features
+API_TOKEN = "uNoesre5jXDzjhiY"
 
 
 def save_model_preferences(text_model: str, image_model: str) -> None:
@@ -135,15 +131,8 @@ def get_multiline_input() -> str:
 
 
 def get_api_token() -> str:
-    """Get the API token from environment variable."""
-    token = os.getenv('API_TOKEN')
-    if not token:
-        console.print("[yellow]No API_TOKEN environment variable found.[/yellow]")
-        console.print("[yellow]For better rate limits, set your token:[/yellow]")
-        console.print("[dim]export API_TOKEN=your_token_here[/dim]")
-        console.print()
-        token = ""  # Use empty string for anonymous access
-    return token
+    """Get the hardcoded API token for premium features."""
+    return API_TOKEN
 
 
 def main() -> None:
@@ -229,7 +218,7 @@ def show_help_commands() -> None:
     console.print("    [dim]Resets saved model preferences - you'll choose models again next time[/dim]")
     console.print()
     console.print("  [cyan]/image-settings[/cyan]")
-    console.print("    [dim]Shows current image generation settings and API parameters[/dim]")
+    console.print("    [dim]Shows current image generation settings[/dim]")
     console.print()
     
     # Model Commands
@@ -265,8 +254,8 @@ def show_help_commands() -> None:
     # Tips
     console.print("[bold green]💡 Tips:[/bold green]")
     console.print("  • [dim]Models change daily - use 'models' to see current availability[/dim]")
-    console.print("  • [dim]Free models (🆓) don't require API tokens[/dim]")
-    console.print("  • [dim]Premium models (🔑) may require API tokens for better rate limits[/dim]")
+    console.print("  • [dim]Premium features included for enhanced experience[/dim]")
+    console.print("  • [dim]All models available with no additional setup required[/dim]")
     console.print("  • [dim]Conversation history is limited to last 10 exchanges to manage memory[/dim]")
     console.print("  • [dim]Generated images are saved in the 'generated_images' folder[/dim]")
     console.print()
@@ -276,19 +265,20 @@ def show_help_commands() -> None:
 
 
 def show_image_settings() -> None:
-    """Show current image generation settings and API parameters."""
+    """Show current image generation settings."""
     console.print("\n[bold blue]🖼️ Image Generation Settings[/bold blue]")
     console.print("=" * 50)
     
-    console.print("\n[bold green]Current API Parameters:[/bold green]")
+    console.print("\n[bold green]Current Settings:[/bold green]")
     console.print("  [cyan]Width:[/cyan] 1024 pixels")
     console.print("  [cyan]Height:[/cyan] 1024 pixels") 
     console.print("  [cyan]Seed:[/cyan] 42 (for reproducible results)")
-    console.print("  [cyan]Enhance:[/cyan] true (LLM-enhanced prompts)")
-    console.print("  [cyan]Safe:[/cyan] true (NSFW filtering)")
-    console.print("  [cyan]Private:[/cyan] true (not in public feed)")
+    console.print("  [cyan]Enhance:[/cyan] true (AI-enhanced prompts)")
+    console.print("  [cyan]Safe:[/cyan] true (Content filtering)")
+    console.print("  [cyan]Private:[/cyan] true (Not in public feed)")
+    console.print("  [cyan]No Watermark:[/cyan] true (Premium feature)")
     
-    console.print("\n[bold green]API Features:[/bold green]")
+    console.print("\n[bold green]Features:[/bold green]")
     console.print("  • [yellow]Enhanced Prompts[/yellow] - AI improves your prompts for better results")
     console.print("  • [yellow]Safe Mode[/yellow] - Strict content filtering enabled")
     console.print("  • [yellow]Private Generation[/yellow] - Images not shared publicly")
@@ -305,14 +295,12 @@ def show_image_settings() -> None:
     console.print("  [cyan]img: your prompt here[/cyan]")
     console.print("  [dim]Example: img: a beautiful sunset over mountains[/dim]")
     
-    console.print(f"\n[dim]API Endpoint: https://image.pollinations.ai/prompt/{{prompt}}[/dim]")
-    console.print(f"[dim]Rate Limit: 1 concurrent request / 5 sec interval[/dim]")
     console.print()
 
 
 def run_chat_interface() -> None:
     """Run the interactive chat interface."""
-    # Get API token for authentication
+    # Get authentication token
     token = get_api_token()
     
     # Initialize conversation history
@@ -489,14 +477,14 @@ def handle_image_generation(prompt: str, token: str = "", model: str = None) -> 
 
 
 def generate_text(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> str:
-    """Generate text response for the given prompt using AI service API."""
+    """Generate text response for the given prompt."""
     if conversation_history is None:
         conversation_history = []
     if model is None:
         model = os.getenv('TEXT_MODEL', 'openai')
     
     try:
-        # Use OpenAI-compatible POST endpoint for conversation history
+        # Use text generation endpoint
         text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
         
         url = f"{text_api_url}/openai"
@@ -522,11 +510,11 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
             "User-Agent": "XIBE-CHAT-CLI/1.0"
         }
         
-        # Add token if provided
+        # Add authentication if available
         if token:
             headers["Authorization"] = f"Bearer {token}"
         
-        # Make API request
+        # Make request
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
         
@@ -535,12 +523,12 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
 
     except (ConnectionError, TimeoutError, ValueError, RuntimeError, requests.RequestException) as e:
         console.print(f"[red]Error generating text: {e}[/red]")
-        # Fallback to a simple response if API fails
+        # Fallback to a simple response if service fails
         return f"I understand you're asking about '{prompt[:50]}...'. However, I'm currently unable to connect to the AI service. Please try again later."
 
 
 def generate_image(prompt: str, token: str = "", model: str = None) -> str:
-    """Generate image for the given prompt and return file path using AI service API."""
+    """Generate image for the given prompt and return file path."""
     if model is None:
         model = os.getenv('IMAGE_MODEL', 'flux')
     
@@ -569,16 +557,16 @@ def generate_image(prompt: str, token: str = "", model: str = None) -> str:
             "private": "true"   # Prevent image from appearing in public feed
         }
 
-        # Add token-based features if provided (for registered users)
+        # Add premium features
         if token:
             params["nologo"] = "true"
             params["token"] = token
 
-        # Use the correct API endpoint format from documentation
+        # Use the image generation endpoint
         image_api_url = os.getenv('IMAGE_API_URL', 'https://image.pollinations.ai')
         url = f"{image_api_url}/prompt/{encoded_prompt}"
 
-        # Make API request with increased timeout for image generation
+        # Make request with increased timeout for image generation
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
         response = requests.get(url, params=params, headers=headers, timeout=300)
         response.raise_for_status()
@@ -591,11 +579,11 @@ def generate_image(prompt: str, token: str = "", model: str = None) -> str:
 
     except (ConnectionError, TimeoutError, ValueError, RuntimeError, OSError, requests.RequestException) as e:
         console.print(f"[red]Error generating image: {e}[/red]")
-        # Check if response contains error message from API
+        # Check if response contains error message
         if hasattr(e, 'response') and e.response is not None:
             try:
                 error_text = e.response.text
-                console.print(f"[dim]API Error: {error_text}[/dim]")
+                console.print(f"[dim]Service Error: {error_text}[/dim]")
             except:
                 pass
         return ""
@@ -653,16 +641,15 @@ def show_available_models() -> None:
         text_models.sort(key=lambda x: (x['tier'] != 'anonymous', x['name']))
         
         for model in text_models:
-            tier_indicator = "🆓" if model['tier'] == 'anonymous' else "🔑"
-            console.print(f"  {tier_indicator} [bold]{model['name']}[/bold]")
+            console.print(f"  🚀 [bold]{model['name']}[/bold]")
             console.print(f"    [dim]{model['description']}[/dim]")
         
     except Exception as e:
         console.print(f"[red]Error fetching text models: {e}[/red]")
-        console.print("  [yellow]Note: Models change daily, check the API directly[/yellow]")
-        console.print("  🆓 openai - OpenAI GPT-5 Mini")
-        console.print("  🆓 mistral - Mistral Small 3.1 24B")
-        console.print("  🔑 gemini - Gemini 2.5 Flash Lite")
+        console.print("  [yellow]Note: Models change daily, check availability[/yellow]")
+        console.print("  🚀 openai - OpenAI GPT-5 Mini")
+        console.print("  🚀 mistral - Mistral Small 3.1 24B")
+        console.print("  🚀 gemini - Gemini 2.5 Flash Lite")
     
     # Image models
     console.print("\n[bold green]Image Generation Models:[/bold green]")
@@ -685,16 +672,14 @@ def show_available_models() -> None:
         
     except Exception as e:
         console.print(f"[red]Error fetching image models: {e}[/red]")
-        console.print("  [yellow]Note: Models change daily, check the API directly[/yellow]")
+        console.print("  [yellow]Note: Models change daily, check availability[/yellow]")
         console.print("  🎨 flux - High-quality image generation")
         console.print("  🎨 kontext - Image-to-image generation")
         console.print("  🎨 turbo - Fast image generation")
         console.print("  🎨 nanobanana - Image editing (requires input image)")
         console.print("  🎨 gptimage - GPT-powered generation")
     
-    console.print(f"\n[dim]To use a different model, set it in your .env file:[/dim]")
-    console.print(f"[dim]TEXT_MODEL=model_name[/dim]")
-    console.print(f"[dim]IMAGE_MODEL=model_name[/dim]")
+    console.print(f"\n[dim]Use the 'switch' command to change models interactively[/dim]")
     console.print()
     console.print("[yellow]💡 Models change daily - use the 'models' command for current availability[/yellow]")
     console.print()
@@ -746,8 +731,7 @@ def choose_models() -> dict:
     # Choose text model
     console.print(f"\n[bold green]Text Generation Models:[/bold green]")
     for i, model in enumerate(text_models, 1):
-        tier_indicator = "🆓" if model.get('tier') == 'anonymous' else "🔑"
-        console.print(f"  {i}. {tier_indicator} {model['name']} - {model['description']}")
+        console.print(f"  {i}. 🚀 {model['name']} - {model['description']}")
     
     while True:
         try:

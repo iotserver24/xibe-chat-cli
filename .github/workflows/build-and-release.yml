@@ -108,7 +108,7 @@ jobs:
         
     - name: Build executable
       run: |
-        pyinstaller --onefile --name xibe-chat xibe_chat.py
+        pyinstaller --onefile --name xibe-chat ai_cli.py
         if [ "$RUNNER_OS" = "Windows" ]; then
           mv dist/xibe-chat.exe dist/xibe-chat-windows.exe
         elif [ "$RUNNER_OS" = "macOS" ]; then
