@@ -35,6 +35,45 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 
+def _hex_gradient(start_hex: str, end_hex: str, steps: int) -> list:
+    """Create a list of hex colors forming a gradient from start to end."""
+    sh = start_hex.lstrip('#')
+    eh = end_hex.lstrip('#')
+    sr, sg, sb = int(sh[0:2], 16), int(sh[2:4], 16), int(sh[4:6], 16)
+    er, eg, eb = int(eh[0:2], 16), int(eh[2:4], 16), int(eh[4:6], 16)
+    colors = []
+    for i in range(max(steps, 1)):
+        t = i / max(steps - 1, 1)
+        r = int(sr + (er - sr) * t)
+        g = int(sg + (eg - sg) * t)
+        b = int(sb + (eb - sb) * t)
+        colors.append(f"#{r:02x}{g:02x}{b:02x}")
+    return colors
+
+
+def _build_gradient_logo(title: str) -> Text:
+    """Return a horizontally gradient-colored ASCII logo for headings."""
+    # Prefer a sleek font; fall back gracefully
+    try:
+        ascii_logo = pyfiglet.figlet_format(title, font="ansi_shadow")
+    except Exception:
+        ascii_logo = pyfiglet.figlet_format(title, font="big")
+
+    lines = ascii_logo.splitlines()
+    max_len = max((len(l) for l in lines), default=0)
+    palette = _hex_gradient("#ff00cc", "#00e5ff", max_len)
+
+    styled = Text()
+    for line in lines:
+        for idx, ch in enumerate(line.ljust(max_len)):
+            if ch == ' ':
+                styled.append(ch)
+            else:
+                styled.append(ch, style=f"bold {palette[idx]}")
+        styled.append("\n")
+    return styled
+
+
 def save_model_preferences(text_model: str, image_model: str) -> None:
     """Save the selected models to configuration file."""
     try:
@@ -135,67 +174,61 @@ def get_api_token() -> str:
     return API_TOKEN
 
 
+def build_system_message(text_model: str = "", image_model: str = "") -> str:
+    """Describe the runtime so the AI knows it's running inside a CLI and brand wrapper."""
+    try:
+        os_name = platform.system()
+        os_ver = platform.release()
+        py_ver = platform.python_version()
+        cwd = os.getcwd()
+        term = os.environ.get("TERM", "unknown")
+    except Exception:
+        os_name, os_ver, py_ver, cwd, term = "unknown", "unknown", "unknown", "", "unknown"
+
+    model_tag = text_model or os.getenv('TEXT_MODEL', 'unknown')
+    image_tag = image_model or os.getenv('IMAGE_MODEL', 'unknown')
+
+    return (
+        f"You are the {model_tag} language model operating via XIBE CHAT — a terminal (CLI) wrapper by R3AP3R. "
+        f"This runtime proxies requests through the CLI; image generation uses model '{image_tag}' when invoked with 'img:'. "
+        "Environment: "
+        f"OS={os_name} {os_ver}; Python={py_ver}; TERM={term}; CWD={cwd}. "
+        "Constraints: No GUI; respond with concise, terminal-friendly markdown; fenced code blocks only; "
+        "avoid HTML/inline CSS and do not suggest mouse/GUI actions."
+    )
+
+
 def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     run_chat_interface()
 
 
-def show_splash_screen() -> None:
-    """Display the AI CLI splash screen."""
-    # Clear the screen for a clean start
-    console.clear()
-
-    # Create ASCII art logo using pyfiglet
-    logo_text = pyfiglet.figlet_format("XIBE-CHAT CLI", font="slant")
-    logo = Text(logo_text, style="bold cyan")
-
-    # Create subtitle panel
+def _show_brand() -> None:
+    """Render only the brand logo and subtitle."""
+    logo = _build_gradient_logo("XIBE CHAT")
     subtitle = Panel(
-        "[italic]AI-powered terminal assistant | Text & Image generation[/italic]",
-        style="blue",
-        title="[bold blue]Welcome[/bold blue]",
+        "[italic]AI-powered terminal assistant — Text and Image generation[/italic]",
+        style="bright_black",
+        title="[bold cyan]Welcome[/bold cyan]",
         title_align="center",
         padding=(1, 2)
     )
-
-    # Display the splash screen
     console.print(logo, justify="center")
     console.print(subtitle, justify="center")
-    console.print()  # Just add some space, no "Press Enter" prompt
+    console.print()
+
+
+def show_splash_screen() -> None:
+    """Display the AI CLI splash screen (brand only)."""
+    console.clear()
+    _show_brand()
 
 
 def show_clear_screen(selected_models: dict) -> None:
-    """Clear terminal and display logo with current commands and models."""
-    # Clear the screen completely
+    """Clear terminal and display only the brand (logo + subtitle)."""
     console.clear()
-    
-    # Show the logo
-    logo_text = pyfiglet.figlet_format("XIBE-CHAT CLI", font="slant")
-    logo = Text(logo_text, style="bold cyan")
-    console.print(logo, justify="center")
-    
-    # Show current models and commands
-    console.print("[green]XIBE-CHAT CLI Interface[/green]")
-    console.print(f"[dim]Using Text Model: {selected_models['text']}[/dim]")
-    console.print(f"[dim]Using Image Model: {selected_models['image']}[/dim]")
-    console.print()
-    console.print("[bold blue]Available Commands:[/bold blue]")
-    console.print("  [cyan]/help[/cyan] - Show all commands and their uses")
-    console.print("  [cyan]/clear[/cyan] - Clear terminal and show this screen")
-    console.print("  [cyan]/new[/cyan] - Start a new chat session")
-    console.print("  [cyan]/reset[/cyan] - Reset saved model preferences")
-    console.print("  [cyan]/image-settings[/cyan] - View image generation settings")
-    console.print("  [cyan]models[/cyan] - Show available AI models")
-    console.print("  [cyan]switch[/cyan] - Change AI models")
-    console.print("  [cyan]exit/quit[/cyan] - End the session")
-    console.print()
-    console.print("[bold blue]Usage:[/bold blue]")
-    console.print("  • Type your message normally for AI chat")
-    console.print("  • Use [yellow]img:[/yellow] prefix for image generation")
-    console.print("  • Press [yellow]Ctrl+N[/yellow] for new lines, [yellow]Enter[/yellow] to send")
-    console.print()
-    console.print("[blue]" + "="*50 + "[/blue]\n")
+    _show_brand()
 
 
 def show_help_commands() -> None:
@@ -493,8 +526,8 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
             sep = '&' if '?' in url else '?'
             url = f"{url}{sep}token={urllib.parse.quote(token)}"
         
-        # Build messages array with conversation history
-        messages = []
+        # Build messages array with system context and conversation history
+        messages = [{"role": "system", "content": build_system_message(text_model=model)}]
         for msg in conversation_history:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
@@ -701,27 +734,11 @@ def choose_models_with_memory() -> dict:
     saved_models = load_model_preferences()
     
     if saved_models:
+        # Auto-use saved models without prompting (requested behavior)
         console.print(f"\n[green]📝 Found saved model preferences:[/green]")
         console.print(f"[dim]Text Model: {saved_models['text']}[/dim]")
         console.print(f"[dim]Image Model: {saved_models['image']}[/dim]")
-        console.print()
-        
-        # Ask user if they want to use saved models
-        try:
-            choice = console.input("[bold cyan]Use saved models? (y/n/s to switch):[/bold cyan] ").strip().lower()
-            
-            if choice in ['y', 'yes', '']:
-                console.print("[green]✅ Using saved model preferences[/green]")
-                return saved_models
-            elif choice in ['s', 'switch']:
-                console.print("[yellow]🔄 Switching to model selection...[/yellow]")
-                return choose_models()
-            else:
-                console.print("[yellow]🔄 Choosing new models...[/yellow]")
-                return choose_models()
-        except KeyboardInterrupt:
-            console.print("\n[yellow]Using saved model preferences[/yellow]")
-            return saved_models
+        return saved_models
     
     # No saved preferences found, ask user to choose
     console.print("\n[bold blue]First time setup - Choose your AI Models[/bold blue]")
