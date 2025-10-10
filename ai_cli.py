@@ -189,12 +189,13 @@ def build_system_message(text_model: str = "", image_model: str = "") -> str:
     image_tag = image_model or os.getenv('IMAGE_MODEL', 'unknown')
 
     return (
-        f"You are the {model_tag} language model operating via XIBE CHAT — a terminal (CLI) wrapper by R3AP3R. "
-        f"This runtime proxies requests through the CLI; image generation uses model '{image_tag}' when invoked with 'img:'. "
-        "Environment: "
-        f"OS={os_name} {os_ver}; Python={py_ver}; TERM={term}; CWD={cwd}. "
-        "Constraints: No GUI; respond with concise, terminal-friendly markdown; fenced code blocks only; "
-        "avoid HTML/inline CSS and do not suggest mouse/GUI actions."
+        f"You are the {model_tag} language model operating via XIBE CHAT — a friendly terminal assistant by R3AP3R. "
+        f"You're helping users through a beautiful CLI interface. Image generation is handled by the '{image_tag}' model when users type 'img:'. "
+        "Your environment: "
+        f"OS={os_name} {os_ver}; Python={py_ver}; Terminal={term}; Working in {cwd}. "
+        "Be conversational, helpful, and engaging. Use terminal-friendly markdown formatting, proper code blocks, "
+        "and avoid suggesting GUI actions since this is a CLI interface. Keep responses concise but thorough, "
+        "and always aim to be genuinely helpful and friendly in your interactions."
     )
 
 
@@ -225,7 +226,7 @@ def show_splash_screen() -> None:
     _show_brand()
 
 
-def show_clear_screen(selected_models: dict) -> None:
+def show_clear_screen(selected_models: dict = None) -> None:
     """Clear terminal and display only the brand (logo + subtitle)."""
     console.clear()
     _show_brand()
@@ -233,68 +234,91 @@ def show_clear_screen(selected_models: dict) -> None:
 
 def show_help_commands() -> None:
     """Show detailed help information for all commands."""
-    console.print("\n[bold blue]XIBE-CHAT CLI Help - All Commands & Usage[/bold blue]")
-    console.print("=" * 60)
+    help_panel = Panel(
+        "📚 Complete guide to all XIBE-CHAT commands and features",
+        style="blue",
+        title="[bold white]📖 XIBE-CHAT Help Center[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="blue"
+    )
+    console.print(help_panel)
     
     # Chat Commands
-    console.print("\n[bold green]💬 Chat Commands:[/bold green]")
-    console.print("  [cyan]/help[/cyan]")
-    console.print("    [dim]Shows this help screen with all available commands and usage[/dim]")
-    console.print()
-    console.print("  [cyan]/clear[/cyan]")
-    console.print("    [dim]Clears the terminal screen and shows the logo with quick command reference[/dim]")
-    console.print()
-    console.print("  [cyan]/new[/cyan]")
-    console.print("    [dim]Starts a fresh chat session (clears conversation history)[/dim]")
-    console.print()
-    console.print("  [cyan]/reset[/cyan]")
-    console.print("    [dim]Resets saved model preferences - you'll choose models again next time[/dim]")
-    console.print()
-    console.print("  [cyan]/image-settings[/cyan]")
-    console.print("    [dim]Shows current image generation settings[/dim]")
-    console.print()
+    chat_commands = Panel(
+        "💬 [bold]Chat Commands:[/bold]\n\n"
+        "  [cyan]/help[/cyan] - Show this help screen\n"
+        "  [cyan]/clear[/cyan] - Clear screen and show logo\n"
+        "  [cyan]/new[/cyan] - Start fresh chat session\n"
+        "  [cyan]/reset[/cyan] - Reset model preferences\n"
+        "  [cyan]/image-settings[/cyan] - View image generation settings",
+        style="green",
+        title="[bold white]💬 Chat Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="green"
+    )
+    console.print(chat_commands)
     
     # Model Commands
-    console.print("[bold green]🤖 Model Commands:[/bold green]")
-    console.print("  [cyan]models[/cyan]")
-    console.print("    [dim]Shows all available AI models for text and image generation[/dim]")
-    console.print()
-    console.print("  [cyan]switch[/cyan]")
-    console.print("    [dim]Allows you to change your current text and image models[/dim]")
-    console.print("    [dim]Preserves your chat history when switching models[/dim]")
-    console.print()
-    
-    # Session Commands
-    console.print("[bold green]🚪 Session Commands:[/bold green]")
-    console.print("  [cyan]exit[/cyan] or [cyan]quit[/cyan]")
-    console.print("    [dim]Ends the current AI CLI session[/dim]")
-    console.print()
+    model_commands = Panel(
+        "🤖 [bold]Model Commands:[/bold]\n\n"
+        "  [cyan]models[/cyan] - View available AI models\n"
+        "  [cyan]switch[/cyan] - Change text/image models\n\n"
+        "[dim]Models preserve chat history when switching[/dim]",
+        style="cyan",
+        title="[bold white]🤖 Model Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="cyan"
+    )
+    console.print(model_commands)
     
     # Input Methods
-    console.print("[bold green]⌨️ Input Methods:[/bold green]")
-    console.print("  [yellow]Normal Text Input[/yellow]")
-    console.print("    [dim]Just type your message and press Enter to chat with AI[/dim]")
-    console.print()
-    console.print("  [yellow]img: prompt[/yellow]")
-    console.print("    [dim]Generate images by prefixing your prompt with 'img:'[/dim]")
-    console.print("    [dim]Example: img: a beautiful sunset over mountains[/dim]")
-    console.print()
-    console.print("  [yellow]Multiline Input[/yellow]")
-    console.print("    [dim]Press Ctrl+N to create new lines within your message[/dim]")
-    console.print("    [dim]Press Enter to send your complete multiline message[/dim]")
-    console.print()
+    input_methods = Panel(
+        "⌨️ [bold]Input Methods:[/bold]\n\n"
+        "  [yellow]Normal Text[/yellow] - Just type and press Enter\n"
+        "  [yellow]img: prompt[/yellow] - Generate images\n"
+        "  [yellow]Multiline[/yellow] - Ctrl+N for new lines\n\n"
+        "[dim]Example: img: a beautiful sunset over mountains[/dim]",
+        style="yellow",
+        title="[bold white]⌨️ Input Methods[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="yellow"
+    )
+    console.print(input_methods)
+    
+    # Session Commands
+    session_commands = Panel(
+        "🚪 [bold]Session Commands:[/bold]\n\n"
+        "  [cyan]exit[/cyan] or [cyan]quit[/cyan] - End session\n\n"
+        "[dim]All commands are case-insensitive[/dim]",
+        style="bright_black",
+        title="[bold white]🚪 Session Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="bright_black"
+    )
+    console.print(session_commands)
     
     # Tips
-    console.print("[bold green]💡 Tips:[/bold green]")
-    console.print("  • [dim]Models change daily - use 'models' to see current availability[/dim]")
-    console.print("  • [dim]Premium features included for enhanced experience[/dim]")
-    console.print("  • [dim]All models available with no additional setup required[/dim]")
-    console.print("  • [dim]Conversation history is limited to last 10 exchanges to manage memory[/dim]")
-    console.print("  • [dim]Generated images are saved in the 'generated_images' folder[/dim]")
-    console.print()
+    tips_panel = Panel(
+        "💡 [bold]Pro Tips:[/bold]\n\n"
+        "  • Models change daily - use 'models' for current availability\n"
+        "  • Premium features included for enhanced experience\n"
+        "  • Conversation history limited to 10 exchanges for memory\n"
+        "  • Generated images saved in 'generated_images' folder\n"
+        "  • All models available with no additional setup",
+        style="magenta",
+        title="[bold white]💡 Pro Tips[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="magenta"
+    )
+    console.print(tips_panel)
     
-    console.print("[blue]" + "="*60 + "[/blue]")
-    console.print("[dim]Type any command or start chatting to continue![/dim]\n")
+    console.print()
 
 
 def show_image_settings() -> None:
@@ -345,20 +369,10 @@ def run_chat_interface() -> None:
     # Save the selected models for future use
     save_model_preferences(selected_models['text'], selected_models['image'])
 
-    console.print("[green]XIBE-CHAT CLI Interface[/green]")
-    console.print(f"[dim]Using Text Model: {selected_models['text']}[/dim]")
-    console.print(f"[dim]Using Image Model: {selected_models['image']}[/dim]")
-    console.print("[yellow]Type 'exit' or 'quit' to end the session[/yellow]")
-    console.print("[yellow]Use 'img:' prefix for image generation[/yellow]")
-    console.print("[yellow]Type 'models' to see available AI models[/yellow]")
-    console.print("[yellow]Type 'switch' to change AI models[/yellow]")
-    console.print("[yellow]Type '/new' to start a new chat session[/yellow]")
-    console.print("[yellow]Type '/clear' to clear terminal and show logo[/yellow]")
-    console.print("[yellow]Type '/help' to see all commands and usage[/yellow]")
-    console.print("[yellow]Type '/reset' to reset saved model preferences[/yellow]")
-    console.print("[yellow]Type '/image-settings' to view image generation settings[/yellow]")
-    console.print("[yellow]For multi-line input: press Ctrl+N for new lines, Enter to send message[/yellow]")
-    console.print("[blue]" + "="*50 + "[/blue]\n")
+    # Simple startup message
+    console.print("[green]XIBE-CHAT Ready[/green]")
+    console.print("[dim]Type '/help' for commands or start chatting![/dim]")
+    console.print()
 
     while True:
         try:
@@ -367,7 +381,16 @@ def run_chat_interface() -> None:
 
             # Check for exit conditions
             if user_input.lower() in ['exit', 'quit']:
-                console.print("[yellow]Goodbye! 👋[/yellow]")
+                goodbye_panel = Panel(
+                    "👋 [bold]Thanks for using XIBE-CHAT![/bold]\n\n"
+                    "[dim]Your conversation has been a pleasure. Come back anytime![/dim]",
+                    style="yellow",
+                    title="[bold white]👋 Goodbye![/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="yellow"
+                )
+                console.print(goodbye_panel)
                 break
 
             # Check for special commands
@@ -375,23 +398,46 @@ def run_chat_interface() -> None:
                 show_available_models()
                 continue
             elif user_input.lower() == 'switch':
-                console.print("\n[bold blue]Switching AI Models[/bold blue]")
+                switch_panel = Panel(
+                    "🔄 Switching AI Models",
+                    style="yellow",
+                    title="[bold white]⚙️ Model Switch[/bold white]",
+                    title_align="center",
+                    padding=(0, 2),
+                    border_style="yellow"
+                )
+                console.print(switch_panel)
                 selected_models = choose_models()
                 # Save the new model preferences
                 save_model_preferences(selected_models['text'], selected_models['image'])
-                console.print(f"[green]✅ Switched to Text Model: {selected_models['text']}[/green]")
-                console.print(f"[green]✅ Switched to Image Model: {selected_models['image']}[/green]")
-                console.print(f"[dim]Chat history preserved with new models[/dim]")
-                console.print(f"[dim]New preferences saved for future use[/dim]")
-                console.print()
+                
+                success_panel = Panel(
+                    f"✅ [green]Successfully switched models![/green]\n\n"
+                    f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
+                    f"🎨 [bold]Image Model:[/bold] {selected_models['image']}\n\n"
+                    f"[dim]Chat history preserved • Preferences saved[/dim]",
+                    style="green",
+                    title="[bold white]🎉 Models Updated[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="green"
+                )
+                console.print(success_panel)
                 continue
             elif user_input.lower() == '/new':
-                console.print("\n[bold blue]Starting New Chat Session[/bold blue]")
+                new_session_panel = Panel(
+                    f"🆕 [green]New chat session started![/green]\n\n"
+                    f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
+                    f"🎨 [bold]Image Model:[/bold] {selected_models['image']}\n\n"
+                    f"[dim]Previous conversation history cleared[/dim]",
+                    style="green",
+                    title="[bold white]🆕 New Chat Session[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="green"
+                )
+                console.print(new_session_panel)
                 conversation_history.clear()
-                console.print("[green]✅ Chat history cleared[/green]")
-                console.print(f"[dim]Using Text Model: {selected_models['text']}[/dim]")
-                console.print(f"[dim]Using Image Model: {selected_models['image']}[/dim]")
-                console.print()
                 continue
             elif user_input.lower() == '/clear':
                 # Clear terminal and show logo with commands
@@ -401,17 +447,48 @@ def run_chat_interface() -> None:
                 show_help_commands()
                 continue
             elif user_input.lower() == '/reset':
-                console.print("\n[bold blue]Reset Model Preferences[/bold blue]")
+                reset_panel = Panel(
+                    "⚠️ Resetting Model Preferences",
+                    style="yellow",
+                    title="[bold white]🔄 Reset Settings[/bold white]",
+                    title_align="center",
+                    padding=(0, 2),
+                    border_style="yellow"
+                )
+                console.print(reset_panel)
                 try:
                     if CONFIG_FILE.exists():
                         CONFIG_FILE.unlink()
-                        console.print("[green]✅ Model preferences reset[/green]")
-                        console.print("[yellow]You will be asked to choose models again next time[/yellow]")
+                        success_panel = Panel(
+                            "✅ [green]Model preferences reset successfully![/green]\n\n"
+                            "[yellow]You will be asked to choose models again next time[/yellow]",
+                            style="green",
+                            title="[bold white]✅ Reset Complete[/bold white]",
+                            title_align="center",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(success_panel)
                     else:
-                        console.print("[yellow]No saved preferences found to reset[/yellow]")
+                        info_panel = Panel(
+                            "ℹ️ [yellow]No saved preferences found to reset[/yellow]",
+                            style="yellow",
+                            title="[bold white]ℹ️ No Preferences Found[/bold white]",
+                            title_align="center",
+                            padding=(1, 2),
+                            border_style="yellow"
+                        )
+                        console.print(info_panel)
                 except Exception as e:
-                    console.print(f"[red]Error resetting preferences: {e}[/red]")
-                console.print()
+                    error_panel = Panel(
+                        f"❌ [red]Error resetting preferences: {e}[/red]",
+                        style="red",
+                        title="[bold white]❌ Reset Failed[/bold white]",
+                        title_align="center",
+                        padding=(1, 2),
+                        border_style="red"
+                    )
+                    console.print(error_panel)
                 continue
             elif user_input.lower() == '/image-settings':
                 show_image_settings()
@@ -446,7 +523,19 @@ def handle_text_generation(prompt: str, token: str = "", conversation_history: l
     if model is None:
         model = os.getenv('TEXT_MODEL', 'openai')
     
-    with console.status(f"[bold green]AI ({model}) is thinking...[/bold green]"):
+    # Display user message in a chat bubble
+    user_panel = Panel(
+        prompt,
+        style="blue",
+        title="[bold white]You[/bold white]",
+        title_align="left",
+        padding=(1, 2),
+        border_style="blue"
+    )
+    console.print(user_panel)
+    console.print()  # Add spacing
+    
+    with console.status(f"[bold green]🤖 AI ({model}) is thinking...[/bold green]", spinner="dots"):
         response = generate_text(prompt, token, conversation_history, model)
 
     # Add to conversation history
@@ -457,32 +546,37 @@ def handle_text_generation(prompt: str, token: str = "", conversation_history: l
     if len(conversation_history) > 20:  # 10 exchanges = 20 messages
         conversation_history = conversation_history[-20:]
 
-    # Display AI response with improved markdown rendering
-    console.print(f"[bold magenta]AI Response ({model}):[/bold magenta]")
-    
-    # Try to render as markdown with improved formatting
+    # Display AI response in a chat bubble with better styling
     try:
         # Clean up the response for better markdown rendering
         cleaned_response = clean_response_for_markdown(response, prompt)
         
-        # Debug output removed for cleaner interface
-        
-        # Create a panel with the markdown content for better visual separation
-        markdown = Markdown(cleaned_response, code_theme="monokai")
-        
-        # Wrap in a panel for better visual presentation
-        response_panel = Panel(
-            markdown,
-            style="magenta",
+        # Create AI response panel with enhanced styling
+        ai_panel = Panel(
+            Markdown(cleaned_response, code_theme="monokai"),
+            style="green",
+            title=f"[bold white]🤖 AI Assistant ({model})[/bold white]",
+            title_align="right",
             padding=(1, 2),
-            border_style="magenta"
+            border_style="green"
         )
-        console.print(response_panel)
+        console.print(ai_panel)
         
     except Exception as e:
         # Fallback to plain text if markdown parsing fails
         console.print(f"[dim]Markdown parsing failed: {e}[/dim]")
-        console.print(Panel.fit(response, style="magenta", padding=(1, 2)))
+        ai_panel = Panel(
+            response,
+            style="green",
+            title=f"[bold white]🤖 AI Assistant ({model})[/bold white]",
+            title_align="right",
+            padding=(1, 2),
+            border_style="green"
+        )
+        console.print(ai_panel)
+    
+    # Add spacing after response for better readability
+    console.print()
 
 
 def handle_image_generation(prompt: str, token: str = "", model: str = None) -> None:
@@ -490,23 +584,49 @@ def handle_image_generation(prompt: str, token: str = "", model: str = None) -> 
     if model is None:
         model = os.getenv('IMAGE_MODEL', 'flux')
     
-    with console.status(f"[bold green]Generating image with {model}...[/bold green]"):
+    # Display user image request in a chat bubble
+    user_panel = Panel(
+        f"🎨 {prompt}",
+        style="blue",
+        title="[bold white]You[/bold white]",
+        title_align="left",
+        padding=(1, 2),
+        border_style="blue"
+    )
+    console.print(user_panel)
+    console.print()  # Add spacing
+    
+    with console.status(f"[bold green]🎨 AI ({model}) is creating your image...[/bold green]", spinner="dots"):
         image_path = generate_image(prompt, token, model)
 
     if image_path:
-        # Show success message
+        # Show success message with enhanced styling
         success_panel = Panel(
-            f"[green]Image generated successfully![/green]\n[blue]Model:[/blue] {model}\n[blue]Saved as:[/blue] {image_path}\n[dim]Opening image...[/dim]",
+            f"✅ [green]Image generated successfully![/green]\n\n"
+            f"🎯 [bold]Model:[/bold] {model}\n"
+            f"💾 [bold]Saved as:[/bold] {image_path}\n"
+            f"🚀 [bold]Opening image...[/bold]",
             style="green",
-            title=f"[bold green]Image Generated ({model})[/bold green]",
-            padding=(1, 2)
+            title="[bold white]🎨 Image Generated Successfully[/bold white]",
+            title_align="center",
+            padding=(1, 2),
+            border_style="green"
         )
         console.print(success_panel)
 
         # Open the image
         open_image(image_path)
     else:
-        console.print("[red]Failed to generate image[/red]")
+        error_panel = Panel(
+            "❌ [red]Failed to generate image[/red]\n\n"
+            "Please try again with a different prompt or check your connection.",
+            style="red",
+            title="[bold white]⚠️ Image Generation Failed[/bold white]",
+            title_align="center",
+            padding=(1, 2),
+            border_style="red"
+        )
+        console.print(error_panel)
 
 
 def generate_text(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> str:
@@ -734,10 +854,7 @@ def choose_models_with_memory() -> dict:
     saved_models = load_model_preferences()
     
     if saved_models:
-        # Auto-use saved models without prompting (requested behavior)
-        console.print(f"\n[green]📝 Found saved model preferences:[/green]")
-        console.print(f"[dim]Text Model: {saved_models['text']}[/dim]")
-        console.print(f"[dim]Image Model: {saved_models['image']}[/dim]")
+        # Auto-use saved models silently
         return saved_models
     
     # No saved preferences found, ask user to choose
