@@ -163,10 +163,7 @@ pypi.txt
 .vscode/
 
 # Generated images
-generated_images/
-*.jpg
-*.png
-*.gif
+
 
 # Configuration files (contains user preferences)
 xibe_chat_config.json
