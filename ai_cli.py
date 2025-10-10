@@ -58,7 +58,7 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 # Current version
-CURRENT_VERSION = "0.7.1"
+CURRENT_VERSION = "0.7.5"
 
 
 
@@ -452,11 +452,18 @@ def show_image_settings() -> None:
 def switch_to_agent_mode() -> None:
     """Switch to agent mode."""
     try:
+        # Add current directory to Python path to find agent_mode module
+        import sys
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
+        
         # Import and run agent mode
         import agent_mode
         agent_mode.run_agent_mode()
-    except ImportError:
-        console.print("[red]Agent mode not available. Make sure agent_mode.py exists.[/red]")
+    except ImportError as e:
+        console.print(f"[red]Agent mode not available: {e}[/red]")
+        console.print("[red]Make sure agent_mode.py exists in the same directory as ai_cli.py[/red]")
     except Exception as e:
         console.print(f"[red]Error switching to agent mode: {e}[/red]")
 
