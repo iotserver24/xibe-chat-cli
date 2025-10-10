@@ -25,7 +25,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/iotserver24/xibe-chat-cli",
     packages=find_packages(),
-    py_modules=["xibe_chat"],
+    py_modules=["ai_cli"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: End Users/Desktop",
@@ -46,8 +46,8 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "xibe-chat=xibe_chat:main",
-            "xibe=xibe_chat:main",  # Short alias
+            "xibe-chat=ai_cli:main",
+            "xibe=ai_cli:main",  # Short alias
         ],
     },
     keywords="ai, chat, cli, image-generation, text-generation, terminal, assistant",

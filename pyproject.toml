@@ -53,12 +53,12 @@ Documentation = "https://github.com/iotserver24/xibe-chat-cli#readme"
 "Bug Tracker" = "https://github.com/iotserver24/xibe-chat-cli/issues"
 
 [project.scripts]
-xibe-chat = "xibe_chat:main"
-xibe = "xibe_chat:main"
+xibe-chat = "ai_cli:main"
+xibe = "ai_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["xibe_chat*"]
+include = ["ai_cli*"]
 
 [tool.black]
 line-length = 100
