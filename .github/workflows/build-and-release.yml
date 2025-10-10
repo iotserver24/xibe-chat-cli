@@ -107,6 +107,7 @@ jobs:
         python -m pip install pyinstaller -r requirements.txt
         
     - name: Build executable
+      shell: bash
       run: |
         pyinstaller --onefile --name xibe-chat ai_cli.py
         if [ "$RUNNER_OS" = "Windows" ]; then
