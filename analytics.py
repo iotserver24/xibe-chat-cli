@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Analytics configuration
 ANALYTICS_ENABLED = True
-ANALYTICS_SERVER_URL = "https://your-analytics-server.com"  # Change this to your server URL
+ANALYTICS_SERVER_URL = "https://zog80gcgk8g4sck8w0gggss4.n92dev.us.kg:5000"  # Your deployed analytics server
 ANALYTICS_TIMEOUT = 5  # seconds
 
 def get_machine_id():

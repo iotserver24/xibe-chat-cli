@@ -6,16 +6,14 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY analytics_requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Flask for analytics server
-RUN pip install flask
+RUN pip install --no-cache-dir -r analytics_requirements.txt
 
 # Copy application files
 COPY analytics_server.py .
