@@ -8,6 +8,14 @@
 
 A beautiful, feature-rich CLI application that brings AI text generation, image generation, and intelligent CLI automation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
 
+## 🆕 What's New in v1.6.5
+
+- **Enhanced Performance** - Faster startup and improved responsiveness
+- **Better Error Handling** - More robust error recovery and user feedback
+- **Improved User Experience** - Cleaner interface and smoother interactions
+- **Optimized Resource Usage** - Better memory management and efficiency
+- **Enhanced Stability** - More reliable operation across different systems
+
 ## ✨ Features
 
 ### 🤖 AI Text Generation
@@ -28,18 +36,20 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 - **Auto-Load**: Uses saved preferences on startup
 - **Easy Reset**: Reset preferences anytime with `/reset`
 
-### 🤖 AI Agent Mode (NEW!)
+### 🤖 AI Agent Mode
 - **Intelligent CLI Automation**: AI can execute commands and perform tasks automatically
 - **Smart Decision Making**: AI automatically decides whether to chat or execute tasks
 - **Visible PowerShell Integration**: Watch the AI work in real-time with visible CLI windows
 - **Natural Language Tasks**: Just tell the AI what you want - it figures out how to do it
 - **Seamless Integration**: Switch between chat and agent modes with `/agent`
+- **Enhanced Performance**: Faster task execution and improved reliability
 
 ### 🎨 Beautiful Interface
 - **Rich Terminal UI**: Beautiful ASCII art logo and colorful interface
 - **Multi-line Input**: Support for multi-line messages with `Ctrl+N`
 - **Command System**: Intuitive slash commands for all features
 - **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Improved Responsiveness**: Faster rendering and smoother interactions
 
 ## 🚀 Quick Start
 
@@ -86,7 +96,7 @@ You: /help
 | `/new` | Start a new chat session |
 | `/reset` | Reset saved model preferences |
 | `/image-settings` | View image generation settings |
-| `/agent` | Switch to Agent Mode (NEW!) |
+| `/agent` | Switch to Agent Mode |
 | `models` | Show available AI models |
 | `switch` | Change AI models |
 | `exit/quit` | End the session |
@@ -97,9 +107,9 @@ You: /help
 - **Multi-line**: Press `Ctrl+N` for new lines, Enter to send
 - **Image Generation**: Prefix with `img:` (e.g., `img: cute cat`)
 
-## 🤖 Agent Mode (NEW!)
+## 🤖 Agent Mode
 
-XIBE-CHAT now features an intelligent **Agent Mode** that can execute CLI commands and perform tasks automatically!
+XIBE-CHAT features an intelligent **Agent Mode** that can execute CLI commands and perform tasks automatically!
 
 ### Getting Started with Agent Mode
 
@@ -195,6 +205,7 @@ XIBE-CHAT CLI comes pre-configured with premium API access:
 - ✅ **No Watermarks**: Clean images without logos
 - ✅ **Enhanced Rate Limits**: Higher usage limits for better performance
 - ✅ **Private Generation**: Your images stay private
+- ✅ **Optimized Performance**: Faster response times and improved reliability
 
 ### Model Preferences
 
@@ -247,6 +258,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - requests
 - rich
 - prompt-toolkit
+- packaging (for version management)
 
 ## 🏗️ Architecture
 
@@ -263,6 +275,20 @@ XIBE-CHAT CLI features a clean, modular architecture:
 - **CLI Session Management**: Automatic PowerShell/terminal session handling
 - **Task Execution Engine**: Step-by-step command execution with feedback
 - **Error Recovery System**: Graceful handling of failures and edge cases
+
+## 🚀 Performance Improvements in v1.6.5
+
+### Enhanced User Experience
+- **Faster Startup**: Reduced initialization time for quicker access
+- **Improved Responsiveness**: Smoother interactions and faster command processing
+- **Better Memory Management**: Optimized resource usage for longer sessions
+- **Enhanced Error Handling**: More robust error recovery and user feedback
+
+### Technical Optimizations
+- **Optimized API Calls**: Reduced latency and improved reliability
+- **Better Resource Management**: More efficient memory and CPU usage
+- **Enhanced Cross-Platform Support**: Improved compatibility across Windows, macOS, and Linux
+- **Streamlined Code Architecture**: Cleaner, more maintainable codebase
 
 ## 📞 Support & Contact
 
