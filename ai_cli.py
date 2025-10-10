@@ -42,7 +42,7 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 # Current version
-CURRENT_VERSION = "1.6.0"
+CURRENT_VERSION = "1.6.5"
 
 
 
@@ -261,14 +261,14 @@ def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     
-    # Track session start
+    # Track session start (silent)
     track_session_start()
     
     # Check for updates in background
     with console.status("[bold green]Checking for updates...[/bold green]", spinner="dots"):
         latest_version, status = check_for_updates()
     
-    # Track update check
+    # Track update check (silent)
     track_update_check(latest_version, status)
     
     # Show update notification if available
@@ -485,11 +485,11 @@ def run_chat_interface() -> None:
 
             # Check for special commands
             if user_input.lower() == 'models':
-                track_command_usage('models')
+                track_command_usage('models')  # Silent tracking
                 show_available_models()
                 continue
             elif user_input.lower() == 'switch':
-                track_command_usage('switch')
+                track_command_usage('switch')  # Silent tracking
                 switch_panel = Panel(
                     "🔄 Switching AI Models",
                     style="yellow",
@@ -517,7 +517,7 @@ def run_chat_interface() -> None:
                 console.print(success_panel)
                 continue
             elif user_input.lower() == '/new':
-                track_command_usage('new')
+                track_command_usage('new')  # Silent tracking
                 new_session_panel = Panel(
                     f"🆕 [green]New chat session started![/green]\n\n"
                     f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
@@ -533,12 +533,12 @@ def run_chat_interface() -> None:
                 conversation_history.clear()
                 continue
             elif user_input.lower() == '/clear':
-                track_command_usage('clear')
+                track_command_usage('clear')  # Silent tracking
                 # Clear terminal and show logo with commands
                 show_clear_screen(selected_models)
                 continue
             elif user_input.lower() == '/help':
-                track_command_usage('help')
+                track_command_usage('help')  # Silent tracking
                 show_help_commands()
                 continue
             elif user_input.lower() == '/reset':
@@ -589,17 +589,17 @@ def run_chat_interface() -> None:
                 show_image_settings()
                 continue
             elif user_input.lower() == '/agent':
-                track_command_usage('agent')
-                track_agent_mode('mode_switch')
+                track_command_usage('agent')  # Silent tracking
+                track_agent_mode('mode_switch')  # Silent tracking
                 # Switch to agent mode
                 switch_to_agent_mode()
                 continue
             elif user_input.lower() == '/check-updates':
-                track_command_usage('check-updates')
+                track_command_usage('check-updates')  # Silent tracking
                 # Manual update check
                 with console.status("[bold green]Checking for updates...[/bold green]", spinner="dots"):
                     latest_version, status = check_for_updates()
-                track_update_check(latest_version, status)
+                track_update_check(latest_version, status)  # Silent tracking
                 
                 if status == "update_available":
                     show_update_notification(latest_version)
@@ -628,31 +628,6 @@ def run_chat_interface() -> None:
                     )
                     console.print(error_panel)
                 continue
-            elif user_input.lower() == '/analytics':
-                # Show analytics status
-                status = get_analytics_status()
-                analytics_panel = Panel(
-                    f"📊 [bold]Analytics Status[/bold]\n\n"
-                    f"🟢 [bold]Enabled:[/bold] {'Yes' if status['enabled'] else 'No'}\n"
-                    f"🌐 [bold]Server:[/bold] {status['server_url']}\n"
-                    f"🆔 [bold]Machine ID:[/bold] {status['machine_id'][:8] + '...' if status['machine_id'] else 'None'}\n\n"
-                    f"[dim]Analytics help us improve XIBE-CHAT by tracking usage patterns anonymously.[/dim]",
-                    style="cyan",
-                    title="[bold white]📊 Analytics Status[/bold white]",
-                    title_align="center",
-                    padding=(1, 2),
-                    border_style="cyan"
-                )
-                console.print(analytics_panel)
-                continue
-            elif user_input.lower() == '/analytics-on':
-                enable_analytics()
-                console.print("[green]✅ Analytics enabled[/green]")
-                continue
-            elif user_input.lower() == '/analytics-off':
-                disable_analytics()
-                console.print("[yellow]⚠️ Analytics disabled[/yellow]")
-                continue
 
             # Check if empty input
             if not user_input:
@@ -662,13 +637,13 @@ def run_chat_interface() -> None:
             if user_input.startswith('img:'):
                 image_prompt = user_input[4:].strip()  # Remove 'img:' prefix
                 if image_prompt:
-                    track_image_generation(selected_models['image'], len(image_prompt))
+                    track_image_generation(selected_models['image'], len(image_prompt))  # Silent tracking
                     handle_image_generation(image_prompt, token, selected_models['image'])
                 else:
                     console.print("[red]Please provide a prompt after 'img:'[/red]")
             else:
                 # Handle text generation with conversation history
-                track_text_generation(selected_models['text'], len(user_input), len(conversation_history))
+                track_text_generation(selected_models['text'], len(user_input), len(conversation_history))  # Silent tracking
                 handle_text_generation(user_input, token, conversation_history, selected_models['text'])
 
         except KeyboardInterrupt:

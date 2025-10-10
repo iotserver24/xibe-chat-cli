@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Analytics configuration
 ANALYTICS_ENABLED = True
-ANALYTICS_SERVER_URL = "https://zog80gcgk8g4sck8w0gggss4.n92dev.us.kg:5000"  # Your deployed analytics server
+ANALYTICS_SERVER_URL = "https://cli-dash.xibe.app"  # Your deployed analytics dashboard
 ANALYTICS_TIMEOUT = 5  # seconds
 
 def get_machine_id():
@@ -61,7 +61,7 @@ def send_analytics(event_type, event_data=None, version=None):
         try:
             payload = {
                 'machine_id': get_machine_id(),
-                'version': version or "1.6.0",
+                'version': version or "1.6.5",
                 'event_type': event_type,
                 'event_data': event_data or {},
                 'timestamp': datetime.now().isoformat(),
@@ -72,11 +72,11 @@ def send_analytics(event_type, event_data=None, version=None):
                 f"{ANALYTICS_SERVER_URL}/track",
                 json=payload,
                 timeout=ANALYTICS_TIMEOUT,
-                headers={'User-Agent': 'XIBE-CHAT-CLI/1.6.0'}
+                headers={'User-Agent': 'XIBE-CHAT-CLI/1.6.5'}
             )
             
             if response.status_code == 200:
-                print(f"[dim]📊 Analytics: {event_type} tracked[/dim]")
+                pass  # Silent tracking - no user feedback
             
         except Exception as e:
             # Fail silently - don't break the user experience
@@ -125,7 +125,7 @@ def track_update_check(latest_version, status):
     send_analytics('update_check', {
         'latest_version': latest_version,
         'status': status,
-        'current_version': "1.6.0"
+        'current_version': "1.6.5"
     })
 
 def track_error(error_type, error_message):

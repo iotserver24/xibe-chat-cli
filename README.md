@@ -228,7 +228,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 
 ### Package Information
 - **Package**: xibe-chat-cli
-- **Version**: 1.6.0 (with Agent Mode!)
+- **Version**: 1.6.5 (with Silent Analytics!)
 - **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
 - **License**: Proprietary
 - **Author**: iotserver24
