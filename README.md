@@ -13,12 +13,12 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 ## 📸 Screenshots
 
 ### 💬 Chat Mode Interface
-![XIBE-CHAT Interface](chat.png)
+![XIBE-CHAT Interface](https://raw.githubusercontent.com/iotserver24/codex/refs/heads/master/chat.png)
 
 *Beautiful chat interface with AI-powered text generation and rich formatting*
 
 ### 🤖 Agent Mode Interface  
-![XIBE Agent Mode](agent.png)
+![XIBE Agent Mode](https://raw.githubusercontent.com/iotserver24/codex/refs/heads/master/agent.png)
 
 *Intelligent CLI automation with smart decision making and task execution*
 
