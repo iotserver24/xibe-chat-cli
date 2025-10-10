@@ -25,9 +25,7 @@ RUN mkdir -p /app/data
 # Expose port
 EXPOSE 5000
 
-# Set environment variables
-ENV FLASK_APP=analytics_server.py
-ENV FLASK_ENV=production
+# No environment variables needed - server works out of the box
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

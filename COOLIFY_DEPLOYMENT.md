@@ -35,11 +35,7 @@ Port: 5000
 ```
 
 ### 4. Environment Variables
-Set these environment variables in Coolify:
-```
-FLASK_ENV=production
-FLASK_APP=analytics_server.py
-```
+**No environment variables needed!** The analytics server works out of the box.
 
 ### 5. Domain Configuration
 - **Subdomain**: `xibe-analytics` (or your preferred name)
