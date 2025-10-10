@@ -1,12 +1,12 @@
 # XIBE-CHAT CLI 🚀
 
-> AI-powered terminal assistant for text and image generation
+> AI-powered terminal assistant for text, image generation, and CLI automation
 
 [![PyPI version](https://badge.fury.io/py/xibe-chat-cli.svg)](https://badge.fury.io/py/xibe-chat-cli)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://pypi.org/project/xibe-chat-cli/)
 
-A beautiful, feature-rich CLI application that brings AI text and image generation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
+A beautiful, feature-rich CLI application that brings AI text generation, image generation, and intelligent CLI automation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
 
 ## ✨ Features
 
@@ -27,6 +27,13 @@ A beautiful, feature-rich CLI application that brings AI text and image generati
 - **Model Preferences**: Remembers your preferred AI models
 - **Auto-Load**: Uses saved preferences on startup
 - **Easy Reset**: Reset preferences anytime with `/reset`
+
+### 🤖 AI Agent Mode (NEW!)
+- **Intelligent CLI Automation**: AI can execute commands and perform tasks automatically
+- **Smart Decision Making**: AI automatically decides whether to chat or execute tasks
+- **Visible PowerShell Integration**: Watch the AI work in real-time with visible CLI windows
+- **Natural Language Tasks**: Just tell the AI what you want - it figures out how to do it
+- **Seamless Integration**: Switch between chat and agent modes with `/agent`
 
 ### 🎨 Beautiful Interface
 - **Rich Terminal UI**: Beautiful ASCII art logo and colorful interface
@@ -79,6 +86,7 @@ You: /help
 | `/new` | Start a new chat session |
 | `/reset` | Reset saved model preferences |
 | `/image-settings` | View image generation settings |
+| `/agent` | Switch to Agent Mode (NEW!) |
 | `models` | Show available AI models |
 | `switch` | Change AI models |
 | `exit/quit` | End the session |
@@ -88,6 +96,95 @@ You: /help
 - **Normal Text**: Just type and press Enter
 - **Multi-line**: Press `Ctrl+N` for new lines, Enter to send
 - **Image Generation**: Prefix with `img:` (e.g., `img: cute cat`)
+
+## 🤖 Agent Mode (NEW!)
+
+XIBE-CHAT now features an intelligent **Agent Mode** that can execute CLI commands and perform tasks automatically!
+
+### Getting Started with Agent Mode
+
+```bash
+# Start the CLI
+xibe-chat
+
+# Switch to Agent Mode
+/agent
+
+# Now you can:
+# 1. Chat normally
+You: Hello, how are you?
+
+# 2. Give tasks in natural language
+You: Create a folder called "my_project"
+You: List all files in this directory
+You: Make a Python file with hello world
+
+# 3. Watch the AI work in real-time!
+```
+
+### 🤖 How Agent Mode Works
+
+#### **Smart Decision Making**
+The AI automatically decides whether your input should be:
+- **Chat Response**: Normal conversation
+- **Task Execution**: CLI automation
+
+#### **Natural Language Tasks**
+Just tell the AI what you want - it figures out how to do it:
+
+```bash
+# Examples of tasks the AI can handle:
+"Create a new folder called test"
+"List all files in the current directory"  
+"Make a Python script that prints hello world"
+"Copy all .txt files to a backup folder"
+"Show me the current working directory"
+"Install a Python package called requests"
+```
+
+#### **Visible PowerShell Integration**
+- **Auto-starts PowerShell** when tasks are detected
+- **Visible windows** so you can see what the AI is doing
+- **Real-time feedback** with command execution progress
+
+### 🎯 Agent Mode Commands
+
+| Command | Description |
+|---------|-------------|
+| `/agent` | Switch to Agent Mode |
+| `/sessions` | Show active CLI sessions |
+| `/close-agent` | Close all agent sessions |
+| `/help` | Show agent mode help |
+| `/clear` | Clear screen and show agent logo |
+| `/new` | Start fresh agent session |
+| `/exit-agent` | Return to chat mode |
+| `agent: open powershell visible` | Start visible PowerShell session |
+| `agent: <command>` | Execute direct command |
+
+### ✨ Agent Mode Features
+
+#### **Automatic Session Management**
+- **Smart Detection**: AI decides when to start CLI sessions
+- **Auto-Recovery**: Gracefully handles session failures
+- **Session Persistence**: Sessions survive mode switches
+
+#### **Error Handling**
+- **Graceful Recovery**: Continues working even when commands fail
+- **User-Friendly Messages**: Clear feedback about what's happening
+- **Fallback Options**: Falls back to chat if automation fails
+
+#### **Visual Feedback**
+- **Decision Indicators**: Shows whether AI will chat or execute tasks
+- **Progress Tracking**: Real-time updates on task execution
+- **Command History**: See what commands were executed
+
+### 🎨 Agent Mode Interface
+
+When you switch to Agent Mode, you'll see:
+- **Orange gradient "XIBE AGENT" logo**
+- **Comprehensive welcome screen** with examples
+- **Smart decision indicators** for each input
+- **Real-time task execution** with visible PowerShell windows
 
 ## ⚙️ Configuration
 
@@ -131,7 +228,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 
 ### Package Information
 - **Package**: xibe-chat-cli
-- **Version**: 0.5.3
+- **Version**: 1.6.0 (with Agent Mode!)
 - **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
 - **License**: Proprietary
 - **Author**: iotserver24
@@ -140,6 +237,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - Python 3.8+
 - Windows, macOS, or Linux
 - Internet connection for AI services
+- PowerShell (Windows) / Terminal (macOS/Linux) for Agent Mode
 
 ## 📦 Requirements
 
@@ -149,6 +247,22 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - requests
 - rich
 - prompt-toolkit
+
+## 🏗️ Architecture
+
+### Modular Design
+XIBE-CHAT CLI features a clean, modular architecture:
+
+- **`ai_cli.py`**: Main chat interface and text/image generation
+- **`agent_mode.py`**: Intelligent CLI automation and task execution
+- **Separate branding**: Different logos and interfaces for each mode
+- **Seamless switching**: Switch between modes without losing state
+
+### Agent Mode Components
+- **Smart Decision Engine**: AI-powered classification of user intent
+- **CLI Session Management**: Automatic PowerShell/terminal session handling
+- **Task Execution Engine**: Step-by-step command execution with feedback
+- **Error Recovery System**: Graceful handling of failures and edge cases
 
 ## 📞 Support & Contact
 
@@ -166,6 +280,7 @@ This is proprietary software. All rights reserved.
 - [Pollinations AI](https://pollinations.ai) for the amazing AI API
 - [Rich](https://github.com/Textualize/rich) for the beautiful terminal interface
 - [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced input handling
+- **OpenAI** for the powerful language models that power Agent Mode's intelligent task execution
 
 ## 📞 Additional Support
 

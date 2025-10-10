@@ -113,7 +113,7 @@ class CLIAgent:
     def execute_command(self, command: str) -> str:
         """Execute a command in the CLI session."""
         if not self.is_active or not self.process:
-            return "Error: Session not active"
+            return "ERROR: Session not active"
             
         try:
             # Add command to history
@@ -280,7 +280,7 @@ def execute_agent_task(task: str, conversation_history: list = None) -> None:
             error_panel = Panel(
                 f"❌ [red]Agent encountered an error:[/red]\n\n"
                 f"{ai_response}\n\n"
-                f"[dim]Task stopped at step {step}[/dim]",
+                f"[dim]Let me try a different approach...[/dim]",
                 style="red",
                 title="[bold white]⚠️ Agent Error[/bold white]",
                 title_align="center",
@@ -288,7 +288,8 @@ def execute_agent_task(task: str, conversation_history: list = None) -> None:
                 border_style="red"
             )
             console.print(error_panel)
-            break
+            # Don't break - try to continue with a simpler approach
+            continue
         
         # Execute the command
         command = ai_response.strip()
@@ -323,8 +324,6 @@ def execute_agent_task(task: str, conversation_history: list = None) -> None:
         step += 1
         console.print()  # Add spacing
     
-    if step > max_steps:
-        console.print("[yellow]⚠️ Task reached maximum steps. Agent stopping for safety.[/yellow]")
 
 
 def generate_agent_command(task: str, session: CLIAgent, conversation_history: list) -> str:
@@ -425,29 +424,181 @@ def show_agent_sessions() -> None:
 def show_agent_demo() -> None:
     """Show agent mode demo and instructions."""
     demo_panel = Panel(
-        "🤖 Agent Mode Demo\n"
+        "🤖 Integrated Agent + Chat Mode Demo\n"
         "==================================================\n"
-        "Example Agent Mode Commands:\n"
-        "  • agent: open powershell - Start PowerShell (background)\n"
-        "  • agent: open powershell visible - Start PowerShell (visible window)\n"
-        "  • agent: dir - List directory contents\n"
-        "  • agent: mkdir test_folder - Create directory\n"
-        "  • agent: echo 'Hello from Agent Mode!' - Display message\n"
+        "🎯 [bold]Just Talk Naturally![/bold]\n"
+        "  • 'Hello, how are you?' → Normal chat\n"
+        "  • 'Create a folder called test' → Task execution\n"
+        "  • 'What is Python?' → Normal chat\n"
+        "  • 'List all files here' → Task execution\n\n"
+        "⚡ [bold]Advanced Commands:[/bold]\n"
+        "  • agent: open powershell visible - Start visible PowerShell\n"
+        "  • agent: dir - Direct command execution\n"
         "  • /sessions - Show active CLI sessions\n"
-        "  • /close-agent - Close all agent sessions\n\n"
-        "Natural Language Commands:\n"
-        "  • Create a new folder called 'my_project'\n"
-        "  • List all files in the current directory\n"
-        "  • Show me the current working directory\n"
-        "  • Create a Python file with hello world\n\n"
-        "✨ Agent Mode is now active! Try the commands above.",
+        "  • /close-agent - Close all sessions\n\n"
+        "✨ [bold]Smart Features:[/bold]\n"
+        "  • I automatically decide: Chat or Task?\n"
+        "  • No need to specify 'agent:' for most things\n"
+        "  • I'll start PowerShell automatically when needed\n"
+        "  • Seamless switching between chat and task execution\n\n"
+        "💡 [bold]Try saying:[/bold] 'Create a new folder and add a file with hello world'",
         style="cyan",
-        title="[bold white]🤖 Agent Mode Demo[/bold white]",
+        title="[bold white]🤖 Integrated Agent Mode Demo[/bold white]",
         title_align="center",
         padding=(1, 2),
         border_style="cyan"
     )
     console.print(demo_panel)
+
+
+def show_agent_help() -> None:
+    """Show comprehensive help for agent mode."""
+    help_panel = Panel(
+        "📚 Complete guide to XIBE Agent Mode commands and features",
+        style="blue",
+        title="[bold white]📖 XIBE Agent Mode Help Center[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="blue"
+    )
+    console.print(help_panel)
+    
+    # Chat Commands
+    chat_commands = Panel(
+        "💬 [bold]Chat Commands:[/bold]\n\n"
+        "  [cyan]/help[/cyan] - Show this help screen\n"
+        "  [cyan]/clear[/cyan] - Clear screen and show agent logo\n"
+        "  [cyan]/new[/cyan] - Start fresh agent session\n"
+        "  [cyan]/image-settings[/cyan] - View image generation settings\n"
+        "  [cyan]/demo[/cyan] - Show agent mode demo",
+        style="green",
+        title="[bold white]💬 Chat Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="green"
+    )
+    console.print(chat_commands)
+    
+    # Agent Commands
+    agent_commands = Panel(
+        "🤖 [bold]Agent Commands:[/bold]\n\n"
+        "  [cyan]/sessions[/cyan] - Show active CLI sessions\n"
+        "  [cyan]/close-agent[/cyan] - Close all agent sessions\n"
+        "  [cyan]/demo[/cyan] - Show agent mode demo\n"
+        "  [cyan]agent: open <cli>[/cyan] - Start CLI session\n"
+        "  [cyan]agent: <command>[/cyan] - Execute command\n\n"
+        "[dim]Natural language tasks auto-detect agent mode[/dim]",
+        style="magenta",
+        title="[bold white]🤖 Agent Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="magenta"
+    )
+    console.print(agent_commands)
+    
+    # Model Commands
+    model_commands = Panel(
+        "🤖 [bold]Model Commands:[/bold]\n\n"
+        "  [cyan]models[/cyan] - View available AI models\n"
+        "  [cyan]switch[/cyan] - Change text/image models\n\n"
+        "[dim]Agent mode uses openai-large for optimal performance[/dim]",
+        style="cyan",
+        title="[bold white]🤖 Model Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="cyan"
+    )
+    console.print(model_commands)
+    
+    # Smart Features
+    smart_features = Panel(
+        "🧠 [bold]Smart Features:[/bold]\n\n"
+        "  [yellow]Auto-Detection[/yellow] - AI decides chat vs task\n"
+        "  [yellow]Auto-Session[/yellow] - Starts PowerShell when needed\n"
+        "  [yellow]Visible Windows[/yellow] - See what AI is doing\n"
+        "  [yellow]Error Recovery[/yellow] - Graceful error handling\n\n"
+        "[dim]Example: 'Create a folder' → Task execution[/dim]",
+        style="yellow",
+        title="[bold white]🧠 Smart Features[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="yellow"
+    )
+    console.print(smart_features)
+    
+    # Session Commands
+    session_commands = Panel(
+        "🚪 [bold]Session Commands:[/bold]\n\n"
+        "  [cyan]/exit-agent[/cyan] or [cyan]exit[/cyan] - Return to chat mode\n\n"
+        "[dim]All commands are case-insensitive[/dim]",
+        style="bright_black",
+        title="[bold white]🚪 Session Commands[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="bright_black"
+    )
+    console.print(session_commands)
+    
+    console.print()
+
+
+def show_image_settings() -> None:
+    """Show current image generation settings."""
+    console.print("\n[bold blue]🖼️ Image Generation Settings[/bold blue]")
+    console.print("=" * 50)
+    
+    console.print("\n[bold green]Current Settings:[/bold green]")
+    console.print("  [cyan]Width:[/cyan] 1024 pixels")
+    console.print("  [cyan]Height:[/cyan] 1024 pixels") 
+    console.print("  [cyan]Seed:[/cyan] 42 (for reproducible results)")
+    console.print("  [cyan]Enhance:[/cyan] true (AI-enhanced prompts)")
+    console.print("  [cyan]Safe:[/cyan] true (Content filtering)")
+    console.print("  [cyan]Private:[/cyan] true (Not in public feed)")
+    console.print("  [cyan]No Watermark:[/cyan] true (Premium feature)")
+    
+    console.print("\n[bold green]Features:[/bold green]")
+    console.print("  • [yellow]Enhanced Prompts[/yellow] - AI improves your prompts for better results")
+    console.print("  • [yellow]Safe Mode[/yellow] - Strict content filtering enabled")
+    console.print("  • [yellow]Private Generation[/yellow] - Images not shared publicly")
+    console.print("  • [yellow]Consistent Results[/yellow] - Same seed for reproducible images")
+    
+    console.print("\n[bold green]Available Models:[/bold green]")
+    console.print("  • [yellow]flux[/yellow] - High-quality general purpose")
+    console.print("  • [yellow]kontext[/yellow] - Image-to-image editing")
+    console.print("  • [yellow]turbo[/yellow] - Fast generation")
+    console.print("  • [yellow]nanobanana[/yellow] - Advanced image editing")
+    console.print("  • [yellow]gptimage[/yellow] - GPT-powered generation")
+    
+    console.print("\n[bold green]Usage:[/bold green]")
+    console.print("  [cyan]img: your prompt here[/cyan]")
+    console.print("  [dim]Example: img: a beautiful sunset over mountains[/dim]")
+    
+    console.print()
+
+
+def show_available_models() -> None:
+    """Show available AI models."""
+    console.print("\n[bold blue]Available AI Models[/bold blue]")
+    console.print("=" * 50)
+    
+    # Text models
+    console.print("\n[bold green]Text Generation Models:[/bold green]")
+    console.print("  🚀 [bold]openai-large[/bold] - OpenAI GPT-5 Mini (Agent Mode Default)")
+    console.print("  🚀 [bold]mistral[/bold] - Mistral Small 3.1 24B")
+    console.print("  🚀 [bold]gemini[/bold] - Gemini 2.5 Flash Lite")
+    
+    # Image models
+    console.print("\n[bold green]Image Generation Models:[/bold green]")
+    console.print("  🎨 [bold]flux[/bold] - High-quality image generation")
+    console.print("  🎨 [bold]kontext[/bold] - Image-to-image editing")
+    console.print("  🎨 [bold]turbo[/bold] - Fast generation")
+    console.print("  🎨 [bold]nanobanana[/bold] - Advanced image editing")
+    console.print("  🎨 [bold]gptimage[/bold] - GPT-powered generation")
+    
+    console.print(f"\n[dim]Agent mode uses openai-large for optimal task execution and chat[/dim]")
+    console.print()
+    console.print("[yellow]💡 Models change daily - use the 'models' command for current availability[/yellow]")
+    console.print()
 
 
 def handle_agent_command(command: str, conversation_history: list) -> None:
@@ -533,6 +684,126 @@ def is_natural_language_task(text: str) -> bool:
     return any(indicator in text_lower for indicator in task_indicators)
 
 
+def decide_chat_or_task(user_input: str, conversation_history: list) -> str:
+    """Smart decision: Should this be a chat response or task execution?"""
+    try:
+        # Build context for decision
+        context = f"User input: {user_input}\n"
+        if conversation_history:
+            recent_context = "Recent conversation:\n"
+            for msg in conversation_history[-3:]:
+                recent_context += f"- {msg['role']}: {msg['content'][:100]}...\n"
+            context += recent_context
+        
+        # Decision prompt
+        decision_prompt = f"""You are an AI assistant in "Integrated Agent + Chat Mode". 
+Your job is to decide whether the user wants to:
+1. CHAT - Have a normal conversation (questions, explanations, help, etc.)
+2. TASK - Execute a command or perform an action (create files, run commands, etc.)
+
+{context}
+
+Examples:
+- "Hello, how are you?" → CHAT
+- "What is Python?" → CHAT  
+- "Create a folder called test" → TASK
+- "List all files in this directory" → TASK
+- "Can you help me with coding?" → CHAT
+- "Make a Python script that prints hello" → TASK
+
+Respond with ONLY: CHAT or TASK"""
+        
+        # Make API call for decision
+        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
+        url = f"{text_api_url}/openai"
+        
+        payload = {
+            "model": "openai-large",
+            "messages": [{"role": "user", "content": decision_prompt}],
+            "max_tokens": 10,
+            "temperature": 0.1  # Very low temperature for consistent decisions
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "XIBE-CHAT-CLI/1.0"
+        }
+        
+        # Add authentication
+        token = get_api_token()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+            sep = '&' if '?' in url else '?'
+            url = f"{url}{sep}token={urllib.parse.quote(token)}"
+        
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        result = response.json()
+        decision = result['choices'][0]['message']['content'].strip().upper()
+        
+        return "task" if "TASK" in decision else "chat"
+        
+    except Exception as e:
+        # Fallback to simple keyword detection
+        return "task" if is_natural_language_task(user_input) else "chat"
+
+
+def handle_chat_response(user_input: str, conversation_history: list) -> None:
+    """Handle chat responses in agent mode."""
+    try:
+        # Import chat functionality from main app
+        from ai_cli import generate_text, build_system_message
+        
+        # Build agent-aware system message
+        agent_system_message = build_system_message("openai-large") + "\n\nYou are in Agent Mode. You can both chat and execute tasks. Be helpful and friendly!"
+        
+        # Generate response
+        with console.status(f"[bold green]🤖 AI Agent is thinking...[/bold green]", spinner="dots"):
+            response = generate_text(user_input, get_api_token(), conversation_history, "openai-large")
+        
+        # Add to conversation history
+        conversation_history.append({"role": "user", "content": user_input})
+        conversation_history.append({"role": "assistant", "content": response})
+        
+        # Keep only last 10 exchanges to avoid token limits
+        if len(conversation_history) > 20:  # 10 exchanges = 20 messages
+            conversation_history = conversation_history[-20:]
+        
+        # Display response in chat bubble
+        from rich.markdown import Markdown
+        from ai_cli import clean_response_for_markdown
+        
+        try:
+            cleaned_response = clean_response_for_markdown(response, user_input)
+            ai_panel = Panel(
+                Markdown(cleaned_response, code_theme="monokai"),
+                style="green",
+                title="[bold white]🤖 AI Assistant (Agent Mode)[/bold white]",
+                title_align="right",
+                padding=(1, 2),
+                border_style="green"
+            )
+            console.print(ai_panel)
+        except Exception:
+            # Fallback to plain text
+            ai_panel = Panel(
+                response,
+                style="green",
+                title="[bold white]🤖 AI Assistant (Agent Mode)[/bold white]",
+                title_align="right",
+                padding=(1, 2),
+                border_style="green"
+            )
+            console.print(ai_panel)
+        
+        console.print()  # Add spacing
+        
+    except Exception as e:
+        console.print(f"[red]Error in chat response: {e}[/red]")
+        console.print("[yellow]I'll try to help you anyway. What do you need?[/yellow]")
+
+
 def show_agent_logo() -> None:
     """Show XIBE AGENT logo and branding."""
     try:
@@ -598,12 +869,37 @@ def show_agent_logo() -> None:
 
 
 def run_agent_mode() -> None:
-    """Run the agent mode interface."""
+    """Run the integrated agent mode interface."""
     # Show agent logo
     show_agent_logo()
     
-    # Show demo
-    show_agent_demo()
+    # Show welcome message
+    welcome_panel = Panel(
+        "🤖 [bold]Integrated Agent + Chat Mode[/bold]\n\n"
+        "✨ [green]Smart Features:[/green]\n"
+        "  • I can chat with you normally\n"
+        "  • I can execute tasks automatically\n"
+        "  • Just tell me what you want - I'll decide!\n\n"
+        "🎯 [cyan]Examples:[/cyan]\n"
+        "  • 'Hello, how are you?' → Chat\n"
+        "  • 'Create a folder called test' → Task execution\n"
+        "  • 'What's the weather like?' → Chat\n"
+        "  • 'List all files in this directory' → Task execution\n\n"
+        "⚡ [yellow]Special Commands:[/yellow]\n"
+        "  • /help - Show comprehensive help\n"
+        "  • /clear - Clear screen and show logo\n"
+        "  • /new - Start fresh session\n"
+        "  • /sessions - Show active CLI sessions\n"
+        "  • /close-agent - Close all sessions\n"
+        "  • /exit-agent - Return to chat mode\n\n"
+        "[dim]I'll automatically detect if you want me to do something or just chat![/dim]",
+        style="cyan",
+        title="[bold white]🤖 Welcome to Integrated Agent Mode[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="cyan"
+    )
+    console.print(welcome_panel)
     
     # Initialize conversation history
     conversation_history = []
@@ -640,25 +936,98 @@ def run_agent_mode() -> None:
             elif user_input.lower() == '/demo':
                 show_agent_demo()
                 continue
+            elif user_input.lower() == '/help':
+                show_agent_help()
+                continue
+            elif user_input.lower() == '/clear':
+                show_agent_logo()
+                continue
+            elif user_input.lower() == '/new':
+                conversation_history.clear()
+                new_session_panel = Panel(
+                    "🆕 [green]New agent session started![/green]\n\n"
+                    "[dim]Previous conversation history cleared[/dim]",
+                    style="green",
+                    title="[bold white]🆕 New Agent Session[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="green"
+                )
+                console.print(new_session_panel)
+                continue
+            elif user_input.lower() == '/image-settings':
+                show_image_settings()
+                continue
+            elif user_input.lower() == 'models':
+                show_available_models()
+                continue
+            elif user_input.lower() == 'switch':
+                switch_panel = Panel(
+                    "🔄 Switching AI Models in Agent Mode",
+                    style="yellow",
+                    title="[bold white]⚙️ Model Switch[/bold white]",
+                    title_align="center",
+                    padding=(0, 2),
+                    border_style="yellow"
+                )
+                console.print(switch_panel)
+                console.print("[yellow]Note: Agent mode uses openai-large for task execution and chat.[/yellow]")
+                continue
             
             # Check if empty input
             if not user_input:
                 continue
             
-            # Handle agent mode commands
+            # Handle direct agent commands (for advanced users)
             if user_input.startswith('agent:'):
                 agent_command = user_input[6:].strip()  # Remove 'agent:' prefix
                 handle_agent_command(agent_command, conversation_history)
                 continue
             
-            # Check if this is a natural language task for agent mode
-            if is_natural_language_task(user_input) and get_active_agent_session():
+            # Smart decision: Chat or Task?
+            with console.status(f"[bold green]🤖 AI Agent is analyzing your request...[/bold green]", spinner="dots"):
+                decision = decide_chat_or_task(user_input, conversation_history)
+            
+            # Show decision indicator
+            if decision == "task":
+                decision_panel = Panel(
+                    "🎯 [bold green]Task Mode Detected[/bold green]\n"
+                    "I'll execute this as a task for you!",
+                    style="green",
+                    title="[bold white]🤖 AI Decision[/bold white]",
+                    title_align="center",
+                    padding=(0, 2),
+                    border_style="green"
+                )
+                console.print(decision_panel)
+            else:
+                decision_panel = Panel(
+                    "💬 [bold blue]Chat Mode Detected[/bold blue]\n"
+                    "I'll respond to you normally!",
+                    style="blue",
+                    title="[bold white]🤖 AI Decision[/bold white]",
+                    title_align="center",
+                    padding=(0, 2),
+                    border_style="blue"
+                )
+                console.print(decision_panel)
+            
+            if decision == "task" and get_active_agent_session():
                 # Execute as agent task
                 execute_agent_task(user_input, conversation_history)
+            elif decision == "task" and not get_active_agent_session():
+                # Need to start a session first
+                console.print("[yellow]💡 I can help you with that task! Let me start a PowerShell session first...[/yellow]")
+                session_id = create_agent_session("powershell", visible_window=True)
+                if session_id:
+                    console.print("[green]✅ PowerShell session started! Now executing your task...[/green]")
+                    execute_agent_task(user_input, conversation_history)
+                else:
+                    console.print("[red]❌ Failed to start PowerShell session. I'll respond via chat instead.[/red]")
+                    handle_chat_response(user_input, conversation_history)
             else:
-                # Regular chat in agent mode
-                console.print("[yellow]💡 Agent mode active. Use natural language for tasks or 'agent:' for direct commands.[/yellow]")
-                console.print("[dim]Example: 'Create a new folder' or 'agent: dir'[/dim]")
+                # Regular chat
+                handle_chat_response(user_input, conversation_history)
             
         except KeyboardInterrupt:
             console.print("\n[yellow]Use '/exit-agent' to return to chat mode[/yellow]")
