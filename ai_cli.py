@@ -31,7 +31,7 @@ console = Console()
 # Configuration file path
 CONFIG_FILE = Path("xibe_chat_config.json")
 
-# Hardcoded API token for premium features
+#API token for premium features
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 
@@ -488,6 +488,10 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
         text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
         
         url = f"{text_api_url}/openai"
+        # Append token as query parameter if available
+        if token:
+            sep = '&' if '?' in url else '?'
+            url = f"{url}{sep}token={urllib.parse.quote(token)}"
         
         # Build messages array with conversation history
         messages = []
@@ -513,6 +517,8 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
         # Add authentication if available
         if token:
             headers["Authorization"] = f"Bearer {token}"
+            # Also send token as Referer
+            headers["Referer"] = f"{text_api_url}/openai?token={urllib.parse.quote(token)}"
         
         # Make request
         response = requests.post(url, json=payload, headers=headers, timeout=30)
@@ -568,6 +574,10 @@ def generate_image(prompt: str, token: str = "", model: str = None) -> str:
 
         # Make request with increased timeout for image generation
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+        if token:
+            # Also send token via Authorization and Referer
+            headers["Authorization"] = f"Bearer {token}"
+            headers["Referer"] = f"{image_api_url}/prompt/{encoded_prompt}?token={urllib.parse.quote(token)}"
         response = requests.get(url, params=params, headers=headers, timeout=300)
         response.raise_for_status()
 
