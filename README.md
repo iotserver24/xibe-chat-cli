@@ -22,7 +22,7 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 
 *Intelligent CLI automation with smart decision making and task execution*
 
-## 🆕 What's New in v1.6.5
+## 🆕 What's New in v0.7.0
 
 - **Enhanced Performance** - Faster startup and improved responsiveness
 - **Better Error Handling** - More robust error recovery and user feedback
@@ -253,7 +253,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 
 ### Package Information
 - **Package**: xibe-chat-cli
-- **Version**: 1.6.5 (with Silent Analytics!)
+- **Version**: 0.7.0 (Latest Release!)
 - **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
 - **License**: Proprietary
 - **Author**: iotserver24
@@ -290,7 +290,7 @@ XIBE-CHAT CLI features a clean, modular architecture:
 - **Task Execution Engine**: Step-by-step command execution with feedback
 - **Error Recovery System**: Graceful handling of failures and edge cases
 
-## 🚀 Performance Improvements in v1.6.5
+## 🚀 Performance Improvements in v0.7.0
 
 ### Enhanced User Experience
 - **Faster Startup**: Reduced initialization time for quicker access

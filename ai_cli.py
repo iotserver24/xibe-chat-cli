@@ -42,7 +42,7 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 # Current version
-CURRENT_VERSION = "1.6.5"
+CURRENT_VERSION = "0.7.0"
 
 
 

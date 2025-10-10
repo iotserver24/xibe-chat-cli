@@ -61,7 +61,7 @@ def send_analytics(event_type, event_data=None, version=None):
         try:
             payload = {
                 'machine_id': get_machine_id(),
-                'version': version or "1.6.5",
+                'version': version or "0.7.0",
                 'event_type': event_type,
                 'event_data': event_data or {},
                 'timestamp': datetime.now().isoformat(),
@@ -72,7 +72,7 @@ def send_analytics(event_type, event_data=None, version=None):
                 f"{ANALYTICS_SERVER_URL}/track",
                 json=payload,
                 timeout=ANALYTICS_TIMEOUT,
-                headers={'User-Agent': 'XIBE-CHAT-CLI/1.6.5'}
+                headers={'User-Agent': 'XIBE-CHAT-CLI/0.7.0'}
             )
             
             if response.status_code == 200:
@@ -125,7 +125,7 @@ def track_update_check(latest_version, status):
     send_analytics('update_check', {
         'latest_version': latest_version,
         'status': status,
-        'current_version': "1.6.5"
+        'current_version': "0.7.0"
     })
 
 def track_error(error_type, error_message):
