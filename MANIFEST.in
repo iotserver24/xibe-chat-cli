@@ -3,6 +3,10 @@ include LICENSE
 include requirements.txt
 include install.py
 include .env
+include ai_cli.py
+include agent_mode.py
+include analytics.py
+include analytics_server.py
 recursive-include .github *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

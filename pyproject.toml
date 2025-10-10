@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xibe-chat-cli"
-version = "0.7.5"
+version = "0.7.7"
 authors = [
     {name = "iotserver24", email = "iotserver24@gmail.com"},
 ]
@@ -59,7 +59,8 @@ xibe = "ai_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ai_cli*"]
+include = ["ai_cli*", "agent_mode*"]
+
 
 [tool.black]
 line-length = 100

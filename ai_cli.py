@@ -58,7 +58,7 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 # Current version
-CURRENT_VERSION = "0.7.5"
+CURRENT_VERSION = "0.7.7"
 
 
 
@@ -458,12 +458,29 @@ def switch_to_agent_mode() -> None:
         if current_dir not in sys.path:
             sys.path.insert(0, current_dir)
         
-        # Import and run agent mode
-        import agent_mode
-        agent_mode.run_agent_mode()
+        # Try to import agent_mode with better error handling
+        try:
+            import agent_mode
+            agent_mode.run_agent_mode()
+        except ImportError as import_error:
+            # Try alternative import methods
+            import importlib.util
+            agent_mode_path = os.path.join(current_dir, "agent_mode.py")
+            
+            if os.path.exists(agent_mode_path):
+                # Load module from file path
+                spec = importlib.util.spec_from_file_location("agent_mode", agent_mode_path)
+                agent_mode = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(agent_mode)
+                agent_mode.run_agent_mode()
+            else:
+                raise import_error
+                
     except ImportError as e:
         console.print(f"[red]Agent mode not available: {e}[/red]")
         console.print("[red]Make sure agent_mode.py exists in the same directory as ai_cli.py[/red]")
+        console.print(f"[red]Current directory: {current_dir}[/red]")
+        console.print(f"[red]Looking for: {os.path.join(current_dir, 'agent_mode.py')}[/red]")
     except Exception as e:
         console.print(f"[red]Error switching to agent mode: {e}[/red]")
 

@@ -17,7 +17,7 @@ with open(os.path.join(this_directory, 'requirements.txt'), encoding='utf-8') as
 
 setup(
     name="xibe-chat-cli",
-    version="0.7.5",
+    version="0.7.7",
     author="iotserver24",
     author_email="your-email@example.com",  # Replace with your email
     description="XIBE-CHAT CLI - AI-powered terminal assistant for text and image generation",
@@ -25,7 +25,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/iotserver24/xibe-chat-cli",
     packages=find_packages(),
-    py_modules=["ai_cli"],
+    py_modules=["ai_cli", "agent_mode"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: End Users/Desktop",
