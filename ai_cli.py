@@ -9,8 +9,10 @@ import subprocess
 import urllib.parse
 import re
 import json
+import time
 from pathlib import Path
 from datetime import datetime
+from typing import Dict, Optional, List
 
 try:
     import pyfiglet
@@ -33,6 +35,260 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 
 #API token for premium features
 API_TOKEN = "uNoesre5jXDzjhiY"
+
+# Global CLI Agent instance
+cli_agent = None
+
+
+class CLIAgent:
+    """Manages external CLI sessions and provides AI-controlled automation."""
+    
+    def __init__(self):
+        self.active_sessions: Dict[str, Dict] = {}
+        self.current_session_id: Optional[str] = None
+        self.session_counter = 0
+        
+    def detect_cli_type(self, command: str) -> str:
+        """Detect CLI type from command or return default."""
+        command_lower = command.lower().strip()
+        
+        if 'powershell' in command_lower or 'ps' in command_lower:
+            return 'powershell'
+        elif 'cmd' in command_lower or 'command' in command_lower:
+            return 'cmd'
+        elif 'bash' in command_lower or 'sh' in command_lower:
+            return 'bash'
+        elif 'python' in command_lower:
+            return 'python'
+        elif 'node' in command_lower or 'npm' in command_lower:
+            return 'node'
+        else:
+            # Default to system shell
+            if platform.system() == "Windows":
+                return 'powershell'
+            else:
+                return 'bash'
+    
+    def get_cli_command(self, cli_type: str) -> List[str]:
+        """Get the command to launch different CLI types."""
+        if platform.system() == "Windows":
+            if cli_type == 'powershell':
+                return ['powershell.exe', '-NoExit', '-Command', '-']
+            elif cli_type == 'cmd':
+                return ['cmd.exe']
+            elif cli_type == 'python':
+                return ['python.exe']
+            elif cli_type == 'node':
+                return ['node.exe']
+            else:
+                return ['powershell.exe']
+        else:
+            if cli_type == 'bash':
+                return ['bash']
+            elif cli_type == 'python':
+                return ['python3']
+            elif cli_type == 'node':
+                return ['node']
+            else:
+                return ['bash']
+    
+    def start_session(self, cli_type: str, working_dir: Optional[str] = None) -> str:
+        """Start a new CLI session and return session ID."""
+        self.session_counter += 1
+        session_id = f"session_{self.session_counter}_{cli_type}"
+        
+        try:
+            cmd = self.get_cli_command(cli_type)
+            
+            # Set working directory
+            cwd = working_dir or os.getcwd()
+            
+            # Start the process
+            process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                cwd=cwd,
+                bufsize=1,
+                universal_newlines=True
+            )
+            
+            # Store session info
+            self.active_sessions[session_id] = {
+                'process': process,
+                'cli_type': cli_type,
+                'working_dir': cwd,
+                'created_at': datetime.now(),
+                'command_history': []
+            }
+            
+            self.current_session_id = session_id
+            return session_id
+            
+        except Exception as e:
+            raise Exception(f"Failed to start {cli_type} session: {e}")
+    
+    def send_command(self, command: str, session_id: Optional[str] = None) -> str:
+        """Send a command to the specified CLI session."""
+        if not session_id:
+            session_id = self.current_session_id
+            
+        if not session_id or session_id not in self.active_sessions:
+            raise Exception("No active CLI session found")
+        
+        session = self.active_sessions[session_id]
+        process = session['process']
+        
+        try:
+            # Add command to history
+            session['command_history'].append(command)
+            
+            # Send command with newline
+            process.stdin.write(command + '\n')
+            process.stdin.flush()
+            
+            # Read output with timeout
+            output_lines = []
+            start_time = time.time()
+            timeout = 10  # 10 second timeout
+            
+            while time.time() - start_time < timeout:
+                try:
+                    # Check if process is still running
+                    if process.poll() is not None:
+                        break
+                    
+                    # Try to read a line
+                    line = process.stdout.readline()
+                    if line:
+                        output_lines.append(line.rstrip())
+                        # If we get a prompt-like output, we might be done
+                        if any(prompt in line for prompt in ['>', '$', '#', '>>>', '...']):
+                            break
+                    else:
+                        time.sleep(0.1)
+                        
+                except Exception:
+                    break
+            
+            output = '\n'.join(output_lines)
+            return output if output.strip() else "Command executed successfully"
+            
+        except Exception as e:
+            raise Exception(f"Failed to execute command: {e}")
+    
+    def read_response(self, session_id: Optional[str] = None) -> str:
+        """Read the current output from CLI session."""
+        if not session_id:
+            session_id = self.current_session_id
+            
+        if not session_id or session_id not in self.active_sessions:
+            return "No active session"
+        
+        session = self.active_sessions[session_id]
+        process = session['process']
+        
+        try:
+            output_lines = []
+            # Read available output
+            while True:
+                try:
+                    line = process.stdout.readline()
+                    if not line:
+                        break
+                    output_lines.append(line.rstrip())
+                except Exception:
+                    break
+            
+            return '\n'.join(output_lines) if output_lines else "No output available"
+            
+        except Exception as e:
+            return f"Error reading response: {e}"
+    
+    def get_session_info(self, session_id: Optional[str] = None) -> Dict:
+        """Get information about a CLI session."""
+        if not session_id:
+            session_id = self.current_session_id
+            
+        if not session_id or session_id not in self.active_sessions:
+            return {"error": "No active session"}
+        
+        session = self.active_sessions[session_id]
+        return {
+            "session_id": session_id,
+            "cli_type": session['cli_type'],
+            "working_dir": session['working_dir'],
+            "created_at": session['created_at'].isoformat(),
+            "command_count": len(session['command_history']),
+            "last_command": session['command_history'][-1] if session['command_history'] else None
+        }
+    
+    def list_sessions(self) -> List[Dict]:
+        """List all active CLI sessions."""
+        sessions = []
+        for session_id, session in self.active_sessions.items():
+            sessions.append({
+                "session_id": session_id,
+                "cli_type": session['cli_type'],
+                "working_dir": session['working_dir'],
+                "created_at": session['created_at'].isoformat(),
+                "command_count": len(session['command_history']),
+                "is_current": session_id == self.current_session_id
+            })
+        return sessions
+    
+    def switch_session(self, session_id: str) -> bool:
+        """Switch to a different CLI session."""
+        if session_id in self.active_sessions:
+            self.current_session_id = session_id
+            return True
+        return False
+    
+    def close_session(self, session_id: Optional[str] = None) -> bool:
+        """Close a CLI session."""
+        if not session_id:
+            session_id = self.current_session_id
+            
+        if session_id and session_id in self.active_sessions:
+            try:
+                session = self.active_sessions[session_id]
+                process = session['process']
+                
+                # Send exit command
+                if session['cli_type'] in ['powershell', 'cmd', 'bash']:
+                    process.stdin.write('exit\n')
+                    process.stdin.flush()
+                
+                # Terminate if still running
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait(timeout=5)
+                
+                del self.active_sessions[session_id]
+                
+                # Update current session if needed
+                if self.current_session_id == session_id:
+                    self.current_session_id = next(iter(self.active_sessions.keys()), None)
+                
+                return True
+            except Exception:
+                return False
+        return False
+    
+    def close_all_sessions(self):
+        """Close all CLI sessions."""
+        for session_id in list(self.active_sessions.keys()):
+            self.close_session(session_id)
+
+
+def get_cli_agent() -> CLIAgent:
+    """Get the global CLI agent instance."""
+    global cli_agent
+    if cli_agent is None:
+        cli_agent = CLIAgent()
+    return cli_agent
 
 
 def _hex_gradient(start_hex: str, end_hex: str, steps: int) -> list:
@@ -174,7 +430,7 @@ def get_api_token() -> str:
     return API_TOKEN
 
 
-def build_system_message(text_model: str = "", image_model: str = "") -> str:
+def build_system_message(text_model: str = "", image_model: str = "", cli_context: str = "") -> str:
     """Describe the runtime so the AI knows it's running inside a CLI and brand wrapper."""
     try:
         os_name = platform.system()
@@ -188,7 +444,7 @@ def build_system_message(text_model: str = "", image_model: str = "") -> str:
     model_tag = text_model or os.getenv('TEXT_MODEL', 'unknown')
     image_tag = image_model or os.getenv('IMAGE_MODEL', 'unknown')
 
-    return (
+    base_message = (
         f"You are the {model_tag} language model operating via XIBE CHAT — a friendly terminal assistant by R3AP3R. "
         f"You're helping users through a beautiful CLI interface. Image generation is handled by the '{image_tag}' model when users type 'img:'. "
         "Your environment: "
@@ -197,12 +453,40 @@ def build_system_message(text_model: str = "", image_model: str = "") -> str:
         "and avoid suggesting GUI actions since this is a CLI interface. Keep responses concise but thorough, "
         "and always aim to be genuinely helpful and friendly in your interactions."
     )
+    
+    if cli_context:
+        base_message += f"\n\nCLI AGENT CONTEXT: {cli_context}"
+    
+    return base_message
 
 
 def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     run_chat_interface()
+
+
+def demo_agent_mode():
+    """Demo function to showcase Agent Mode capabilities."""
+    console.print("\n[bold blue]🤖 Agent Mode Demo[/bold blue]")
+    console.print("=" * 50)
+    
+    console.print("\n[yellow]Example Agent Mode Commands:[/yellow]")
+    console.print("  • [cyan]agent: open powershell[/cyan] - Start PowerShell session")
+    console.print("  • [cyan]agent: dir[/cyan] - List directory contents")
+    console.print("  • [cyan]agent: mkdir test_folder[/cyan] - Create directory")
+    console.print("  • [cyan]agent: echo 'Hello from Agent Mode!'[/cyan] - Display message")
+    console.print("  • [cyan]/sessions[/cyan] - Show active CLI sessions")
+    console.print("  • [cyan]/close-agent[/cyan] - Close all agent sessions")
+    
+    console.print("\n[yellow]Natural Language Commands:[/yellow]")
+    console.print("  • [cyan]Create a new folder called 'my_project'[/cyan]")
+    console.print("  • [cyan]List all files in the current directory[/cyan]")
+    console.print("  • [cyan]Show me the current working directory[/cyan]")
+    console.print("  • [cyan]Create a Python file with hello world[/cyan]")
+    
+    console.print("\n[green]✨ Agent Mode is now active! Try the commands above.[/green]")
+    console.print()
 
 
 def _show_brand() -> None:
@@ -279,8 +563,12 @@ def show_help_commands() -> None:
         "⌨️ [bold]Input Methods:[/bold]\n\n"
         "  [yellow]Normal Text[/yellow] - Just type and press Enter\n"
         "  [yellow]img: prompt[/yellow] - Generate images\n"
+        "  [yellow]agent: command[/yellow] - CLI automation\n"
         "  [yellow]Multiline[/yellow] - Ctrl+N for new lines\n\n"
-        "[dim]Example: img: a beautiful sunset over mountains[/dim]",
+        "[dim]Examples:\n"
+        "• img: a beautiful sunset over mountains\n"
+        "• agent: open powershell\n"
+        "• agent: ls -la[/dim]",
         style="yellow",
         title="[bold white]⌨️ Input Methods[/bold white]",
         title_align="center",
@@ -288,6 +576,22 @@ def show_help_commands() -> None:
         border_style="yellow"
     )
     console.print(input_methods)
+    
+    # Agent Commands
+    agent_commands = Panel(
+        "🤖 [bold]Agent Mode Commands:[/bold]\n\n"
+        "  [cyan]agent: open [cli_type][/cyan] - Start CLI session\n"
+        "  [cyan]agent: [command][/cyan] - Execute command\n"
+        "  [cyan]/sessions[/cyan] - Show active sessions\n"
+        "  [cyan]/close-agent[/cyan] - Close agent sessions\n\n"
+        "[dim]Supported CLIs: powershell, cmd, bash, python, node[/dim]",
+        style="magenta",
+        title="[bold white]🤖 Agent Mode[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="magenta"
+    )
+    console.print(agent_commands)
     
     # Session Commands
     session_commands = Panel(
@@ -353,6 +657,192 @@ def show_image_settings() -> None:
     console.print("  [dim]Example: img: a beautiful sunset over mountains[/dim]")
     
     console.print()
+
+
+def handle_agent_mode(user_input: str, token: str, conversation_history: list, model: str) -> None:
+    """Handle agent mode commands for CLI automation."""
+    agent = get_cli_agent()
+    
+    # Display user message in a chat bubble
+    user_panel = Panel(
+        f"🤖 {user_input}",
+        style="blue",
+        title="[bold white]You (Agent Mode)[/bold white]",
+        title_align="left",
+        padding=(1, 2),
+        border_style="blue"
+    )
+    console.print(user_panel)
+    console.print()
+    
+    try:
+        # Parse agent command
+        if user_input.lower().startswith('agent: open '):
+            # Start new CLI session
+            cli_type = agent.detect_cli_type(user_input)
+            session_id = agent.start_session(cli_type)
+            
+            success_panel = Panel(
+                f"✅ [green]Started {cli_type} session successfully![/green]\n\n"
+                f"🆔 [bold]Session ID:[/bold] {session_id}\n"
+                f"🎯 [bold]CLI Type:[/bold] {cli_type}\n"
+                f"📂 [bold]Working Directory:[/bold] {os.getcwd()}\n\n"
+                f"[dim]Ready to execute commands. Use 'agent: [command]' to run commands.[/dim]",
+                style="green",
+                title="[bold white]🤖 CLI Agent Started[/bold white]",
+                title_align="center",
+                padding=(1, 2),
+                border_style="green"
+            )
+            console.print(success_panel)
+            
+        elif user_input.lower().startswith('agent: '):
+            # Execute command in current session
+            command = user_input[7:].strip()  # Remove 'agent: ' prefix
+            
+            if not agent.current_session_id:
+                error_panel = Panel(
+                    "❌ [red]No active CLI session found![/red]\n\n"
+                    "Use 'agent: open [cli_type]' to start a session first.\n"
+                    "Examples:\n"
+                    "• agent: open powershell\n"
+                    "• agent: open bash\n"
+                    "• agent: open python",
+                    style="red",
+                    title="[bold white]⚠️ No Active Session[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="red"
+                )
+                console.print(error_panel)
+                return
+            
+            # Show command execution
+            with console.status(f"[bold green]🤖 Executing: {command}[/bold green]", spinner="dots"):
+                output = agent.send_command(command)
+            
+            # Display results
+            if output.strip():
+                result_panel = Panel(
+                    output,
+                    style="green",
+                    title="[bold white]🤖 Command Output[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="green"
+                )
+                console.print(result_panel)
+            else:
+                console.print("[green]✅ Command executed successfully[/green]")
+                
+        else:
+            # Natural language command - let AI decide what to do
+            handle_ai_agent_command(user_input, token, conversation_history, model, agent)
+            
+    except Exception as e:
+        error_panel = Panel(
+            f"❌ [red]Agent Error: {e}[/red]\n\n"
+            "Please check your command and try again.",
+            style="red",
+            title="[bold white]❌ Agent Error[/bold white]",
+            title_align="center",
+            padding=(1, 2),
+            border_style="red"
+        )
+        console.print(error_panel)
+
+
+def handle_ai_agent_command(user_input: str, token: str, conversation_history: list, model: str, agent: CLIAgent) -> None:
+    """Let AI decide how to execute natural language commands in agent mode."""
+    
+    # Build CLI context for AI
+    cli_context = "You are in AGENT MODE. You can control external CLI sessions. "
+    if agent.current_session_id:
+        session_info = agent.get_session_info()
+        cli_context += f"Current session: {session_info['cli_type']} in {session_info['working_dir']}. "
+        cli_context += f"Command history: {len(agent.active_sessions[agent.current_session_id]['command_history'])} commands. "
+    else:
+        cli_context += "No active CLI session. You can start one with 'agent: open [cli_type]'. "
+    
+    cli_context += "When user gives natural language instructions, translate them to appropriate CLI commands and execute them. "
+    cli_context += "Always explain what you're doing and show the results."
+    
+    # Get AI response with CLI context
+    with console.status(f"[bold green]🤖 AI Agent is planning...[/bold green]", spinner="dots"):
+        response = generate_text(user_input, token, conversation_history, model, cli_context)
+    
+    # Add to conversation history
+    conversation_history.append({"role": "user", "content": user_input})
+    conversation_history.append({"role": "assistant", "content": response})
+    
+    # Keep only last 10 exchanges to avoid token limits
+    if len(conversation_history) > 20:  # 10 exchanges = 20 messages
+        conversation_history = conversation_history[-20:]
+    
+    # Display AI response
+    try:
+        cleaned_response = clean_response_for_markdown(response, user_input)
+        ai_panel = Panel(
+            Markdown(cleaned_response, code_theme="monokai"),
+            style="green",
+            title=f"[bold white]🤖 AI Agent ({model})[/bold white]",
+            title_align="right",
+            padding=(1, 2),
+            border_style="green"
+        )
+        console.print(ai_panel)
+    except Exception as e:
+        ai_panel = Panel(
+            response,
+            style="green",
+            title=f"[bold white]🤖 AI Agent ({model})[/bold white]",
+            title_align="right",
+            padding=(1, 2),
+            border_style="green"
+        )
+        console.print(ai_panel)
+
+
+def show_agent_sessions() -> None:
+    """Show all active CLI agent sessions."""
+    agent = get_cli_agent()
+    sessions = agent.list_sessions()
+    
+    if not sessions:
+        info_panel = Panel(
+            "ℹ️ [yellow]No active CLI sessions[/yellow]\n\n"
+            "Start a session with: agent: open [cli_type]\n"
+            "Examples:\n"
+            "• agent: open powershell\n"
+            "• agent: open bash\n"
+            "• agent: open python",
+            style="yellow",
+            title="[bold white]🤖 CLI Agent Sessions[/bold white]",
+            title_align="center",
+            padding=(1, 2),
+            border_style="yellow"
+        )
+        console.print(info_panel)
+        return
+    
+    sessions_text = ""
+    for session in sessions:
+        current_indicator = "👑 " if session['is_current'] else "  "
+        sessions_text += f"{current_indicator}[bold]{session['session_id']}[/bold]\n"
+        sessions_text += f"    🎯 Type: {session['cli_type']}\n"
+        sessions_text += f"    📂 Directory: {session['working_dir']}\n"
+        sessions_text += f"    📊 Commands: {session['command_count']}\n"
+        sessions_text += f"    🕐 Created: {session['created_at']}\n\n"
+    
+    sessions_panel = Panel(
+        sessions_text,
+        style="cyan",
+        title="[bold white]🤖 Active CLI Sessions[/bold white]",
+        title_align="center",
+        padding=(1, 2),
+        border_style="cyan"
+    )
+    console.print(sessions_panel)
 
 
 def run_chat_interface() -> None:
@@ -493,13 +983,35 @@ def run_chat_interface() -> None:
             elif user_input.lower() == '/image-settings':
                 show_image_settings()
                 continue
+            elif user_input.lower() == '/sessions':
+                show_agent_sessions()
+                continue
+            elif user_input.lower() == '/close-agent':
+                agent = get_cli_agent()
+                agent.close_all_sessions()
+                success_panel = Panel(
+                    "✅ [green]All CLI agent sessions closed successfully![/green]",
+                    style="green",
+                    title="[bold white]🤖 Agent Sessions Closed[/bold white]",
+                    title_align="center",
+                    padding=(1, 2),
+                    border_style="green"
+                )
+                console.print(success_panel)
+                continue
+            elif user_input.lower() == '/demo-agent':
+                demo_agent_mode()
+                continue
 
             # Check if empty input
             if not user_input:
                 continue
 
+            # Handle agent mode requests
+            if user_input.lower().startswith('agent:'):
+                handle_agent_mode(user_input, token, conversation_history, selected_models['text'])
             # Handle image generation requests
-            if user_input.startswith('img:'):
+            elif user_input.startswith('img:'):
                 image_prompt = user_input[4:].strip()  # Remove 'img:' prefix
                 if image_prompt:
                     handle_image_generation(image_prompt, token, selected_models['image'])
@@ -514,6 +1026,13 @@ def run_chat_interface() -> None:
         except EOFError:
             console.print("\n[yellow]Goodbye! 👋[/yellow]")
             break
+        finally:
+            # Clean up any active CLI agent sessions
+            try:
+                agent = get_cli_agent()
+                agent.close_all_sessions()
+            except Exception:
+                pass
 
 
 def handle_text_generation(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> None:
@@ -629,7 +1148,7 @@ def handle_image_generation(prompt: str, token: str = "", model: str = None) -> 
         console.print(error_panel)
 
 
-def generate_text(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> str:
+def generate_text(prompt: str, token: str = "", conversation_history: list = None, model: str = None, cli_context: str = "") -> str:
     """Generate text response for the given prompt."""
     if conversation_history is None:
         conversation_history = []
@@ -647,7 +1166,7 @@ def generate_text(prompt: str, token: str = "", conversation_history: list = Non
             url = f"{url}{sep}token={urllib.parse.quote(token)}"
         
         # Build messages array with system context and conversation history
-        messages = [{"role": "system", "content": build_system_message(text_model=model)}]
+        messages = [{"role": "system", "content": build_system_message(text_model=model, cli_context=cli_context)}]
         for msg in conversation_history:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
