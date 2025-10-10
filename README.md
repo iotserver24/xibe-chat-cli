@@ -8,6 +8,20 @@
 
 A beautiful, feature-rich CLI application that brings AI text generation, image generation, and intelligent CLI automation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
 
+[![Donate](https://img.shields.io/badge/Donate-Razorpay-blue?style=for-the-badge&logo=razorpay)](https://razorpay.me/@megavault)
+
+## 📸 Screenshots
+
+### 💬 Chat Mode Interface
+![XIBE-CHAT Interface](chat.png)
+
+*Beautiful chat interface with AI-powered text generation and rich formatting*
+
+### 🤖 Agent Mode Interface  
+![XIBE Agent Mode](agent.png)
+
+*Intelligent CLI automation with smart decision making and task execution*
+
 ## 🆕 What's New in v1.6.5
 
 - **Enhanced Performance** - Faster startup and improved responsiveness
@@ -290,6 +304,14 @@ XIBE-CHAT CLI features a clean, modular architecture:
 - **Enhanced Cross-Platform Support**: Improved compatibility across Windows, macOS, and Linux
 - **Streamlined Code Architecture**: Cleaner, more maintainable codebase
 
+## 💖 Support the Project
+
+If you find XIBE-CHAT useful, consider supporting its development:
+
+[![Donate](https://img.shields.io/badge/Donate-Razorpay-blue?style=for-the-badge&logo=razorpay)](https://razorpay.me/@megavault)
+
+**Every contribution helps improve XIBE-CHAT for everyone! 🙏**
+
 ## 📞 Support & Contact
 
 For support, feature requests, or questions:
@@ -318,3 +340,5 @@ This is proprietary software. All rights reserved.
 **Made with ❤️ by iotserver24**
 
 *Star this repository if you find it helpful!*
+
+[![Donate](https://img.shields.io/badge/Support%20Development-Donate-green?style=for-the-badge)](https://razorpay.me/@megavault)
