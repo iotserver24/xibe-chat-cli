@@ -20,7 +20,18 @@ except ImportError:
 
 try:
     from dotenv import load_dotenv
-    load_dotenv()  # Load environment variables from .env file
+    # Load environment variables from .env file
+    # First try current directory, then package directory
+    if os.path.exists('.env'):
+        load_dotenv('.env')
+    else:
+        # Try to find .env in the package directory
+        package_dir = Path(__file__).parent
+        env_path = package_dir / '.env'
+        if env_path.exists():
+            load_dotenv(env_path)
+        else:
+            load_dotenv()  # Fallback to default behavior
 except ImportError:
     print("Error: python-dotenv is required. Install it with: pip install python-dotenv")
     exit(1)

@@ -1,0 +1,14 @@
+include README.md
+include LICENSE
+include requirements.txt
+include install.py
+include .env
+recursive-include .github *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+exclude .gitignore
+exclude xibe_chat_config.json
+exclude generated_images/*
+exclude *.jpg
+exclude *.png
+exclude *.gif

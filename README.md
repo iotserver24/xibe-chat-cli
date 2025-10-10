@@ -1,129 +1,212 @@
-# AI CLI
+# XIBE-CHAT CLI 🚀
 
-AI-powered terminal assistant for text and image generation.
+> AI-powered terminal assistant for text and image generation
 
-## Features
+[![PyPI version](https://badge.fury.io/py/xibe-chat-cli.svg)](https://badge.fury.io/py/xibe-chat-cli)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- **Interactive Chat Interface**: Gemini-style splash screen with beautiful ASCII art
-- **Real Text Generation**: Send prompts and receive AI responses
-- **Real Image Generation**: Generate images with `img:` prefix
-- **Multi-line Input Support**: Type multi-line messages with proper formatting
-- **Enhanced Markdown Rendering**: Improved display of bold text, links, lists, and blockquotes
-- **Token Authentication**: Support for API tokens for better rate limits
-- **Cross-platform**: Works on Windows, macOS, and Linux
-- **Direct API Integration**: Uses REST APIs for AI services
+A beautiful, feature-rich CLI application that brings AI text and image generation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
 
-## Installation
+## ✨ Features
 
-1. Install dependencies:
+### 🤖 AI Text Generation
+- **Multiple AI Models**: Choose from various text generation models
+- **Conversation Memory**: Maintains context across multiple exchanges
+- **Rich Formatting**: Beautiful markdown rendering with syntax highlighting
+- **Model Switching**: Change models on the fly without losing chat history
+
+### 🖼️ AI Image Generation
+- **Enhanced Prompts**: AI automatically improves your prompts for better results
+- **Multiple Models**: Support for flux, kontext, turbo, nanobanana, and more
+- **High Quality**: 1024x1024 resolution with safety filtering
+- **Private Generation**: Images not shared in public feeds
+
+### 💾 Smart Memory System
+- **Model Preferences**: Remembers your preferred AI models
+- **Auto-Load**: Uses saved preferences on startup
+- **Easy Reset**: Reset preferences anytime with `/reset`
+
+### 🎨 Beautiful Interface
+- **Rich Terminal UI**: Beautiful ASCII art logo and colorful interface
+- **Multi-line Input**: Support for multi-line messages with `Ctrl+N`
+- **Command System**: Intuitive slash commands for all features
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+
+## 🚀 Quick Start
+
+### Installation
+
+**Via pip (recommended):**
 ```bash
-pip install -r requirements.txt
+pip install xibe-chat-cli
 ```
 
-2. **Set up API Token (Recommended):**
-   - Copy the example file: `cp .env.example .env`
-   - Edit `.env` file and replace `your_token_here` with your actual API token
-   - This provides better rate limits and access to advanced features
-
-3. Run the application:
+**Run the CLI:**
 ```bash
-python ai_cli.py
+xibe-chat
+# or use the short alias
+xibe
 ```
 
-## Usage
-
-1. **Splash Screen**: Welcome screen displays automatically
-2. **Model Selection**: Choose your preferred AI models for text and image generation
-3. **Text Generation**: Simply type your prompt and press Enter
-4. **Multi-line Input**: Press Ctrl+J for new lines, Enter to send message
-5. **Image Generation**: Type `img:` followed by your prompt (e.g., `img: a beautiful sunset`)
-6. **View Models**: Type `models` to see available AI models
-7. **Switch Models**: Type `switch` to change AI models during the chat
-8. **New Chat**: Type `/new` to start fresh (clears conversation history)
-9. **Exit**: Type `exit` or `quit` to end the session
-
-### Special Commands
-
-- **`models`** - Show available AI models for text and image generation (fetched live from API)
-- **`switch`** - Change your selected AI models during the chat session
-- **`/new`** - Start a new chat session (clears conversation history)
-- **`img: prompt`** - Generate images with the specified prompt
-- **`exit` / `quit`** - End the chat session
-
-### Important Notes
-
-- **Models Change Daily**: Available models are fetched live from the API, so they may change frequently
-- **nanobanana Model**: This image model requires an input image for editing - it's not for text-to-image generation
-- **Model Discovery**: Use the `models` command to see what's currently available
-
-### Authentication
-
-The app supports both anonymous and authenticated access:
-
-- **Anonymous**: Works immediately without any setup
-- **Authenticated**: Set your token in the `.env` file for:
-  - Higher rate limits (5 seconds vs 15 seconds)
-  - Access to advanced models
-  - Priority support
-
-## Examples
-
-```
-You: Tell me about artificial intelligence
-AI Response: [Panel with improved markdown rendering showing bold text, links, and lists]
-
-You: Write a paragraph with different formatting
-[Ctrl+J for new line]
-with **bold text** and [links](https://example.com)
-[Enter to send]
-AI Response: [Properly rendered markdown with bold text and clickable links]
-
-You: img: a beautiful sunset
-Image Generated: [Success message and image opens automatically]
-
-You: img: a futuristic city skyline at night with neon lights
-Image Generated: [Another image opens with the new prompt]
-
-You: exit
-Goodbye! 👋
-```
-
-## Dependencies
-
-- `pyfiglet`: For ASCII art logo
-- `rich`: For beautiful terminal formatting and colors
-- `requests`: For HTTP API calls to AI services
-- `prompt-toolkit`: For advanced multi-line input with keyboard shortcuts
-
-## Technical Details
-
-- **Text Generation**: Uses AI service REST API
-- **Image Generation**: Uses AI service REST API (1024x1024px)
-- **Authentication**: Supports both anonymous and token-based access
-- **Rate Limits**: Anonymous (15s), Authenticated (5s)
-- **Error Handling**: Robust error handling with user-friendly messages
-- **File Management**: Images saved to `generated_images/` directory with unique filenames
-
-## Configuration
-
-Edit the `.env` file to set your API token for authenticated access:
+### One-line Install Script
 ```bash
-# .env file
-API_TOKEN=your_actual_token_here
+# Download and run installer
+python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/iotserver24/xibe-chat-cli/main/install.py').read())"
 ```
 
-You can also optionally customize models and API endpoints:
+## 📖 Usage
+
+### Basic Commands
+
 ```bash
-# .env file
-# Choose different AI models
-TEXT_MODEL=mistral              # Options: openai, mistral, claude-hybridspace, etc.
-IMAGE_MODEL=kontext             # Options: flux, kontext, etc.
+# Start the CLI
+xibe-chat
 
-# Custom API endpoints
-TEXT_API_URL=https://your-custom-text-api.com
-IMAGE_API_URL=https://your-custom-image-api.com/prompt
+# Chat with AI
+You: Hello! How are you?
+
+# Generate images
+You: img: a beautiful sunset over mountains
+
+# Get help
+You: /help
 ```
 
-## Note
+### Available Commands
 
-This application uses AI service REST APIs for real text and image generation. Anonymous access is supported, but setting up an API token provides better rate limits and access to advanced features.
+| Command | Description |
+|---------|-------------|
+| `/help` | Show all commands and usage |
+| `/clear` | Clear terminal and show logo |
+| `/new` | Start a new chat session |
+| `/reset` | Reset saved model preferences |
+| `/image-settings` | View image generation settings |
+| `models` | Show available AI models |
+| `switch` | Change AI models |
+| `exit/quit` | End the session |
+
+### Input Methods
+
+- **Normal Text**: Just type and press Enter
+- **Multi-line**: Press `Ctrl+N` for new lines, Enter to send
+- **Image Generation**: Prefix with `img:` (e.g., `img: cute cat`)
+
+## ⚙️ Configuration
+
+### API Token (Optional but Recommended)
+
+Set your API token for better rate limits and premium features:
+
+```bash
+# Windows
+set API_TOKEN=your_token_here
+
+# macOS/Linux
+export API_TOKEN=your_token_here
+```
+
+### Model Preferences
+
+Your preferred models are automatically saved in `xibe_chat_config.json`:
+
+```json
+{
+  "text_model": "mistral",
+  "image_model": "flux",
+  "last_updated": "2024-01-15T10:30:45.123456"
+}
+```
+
+## 🖼️ Image Generation Features
+
+### Enhanced API Parameters
+- **Enhance**: AI improves your prompts automatically
+- **Safe Mode**: Strict NSFW filtering enabled
+- **Private**: Images not shared publicly
+- **High Quality**: 1024x1024 resolution
+- **No Watermarks**: Clean images (with API token)
+
+### Available Models
+- **flux**: High-quality general purpose
+- **kontext**: Image-to-image editing
+- **turbo**: Fast generation
+- **nanobanana**: Advanced image editing
+- **gptimage**: GPT-powered generation
+
+## 🔧 Development
+
+### Setup Development Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/iotserver24/xibe-chat-cli.git
+cd xibe-chat-cli
+
+# Install in development mode
+pip install -e .
+
+# Install development dependencies
+pip install -e ".[dev]"
+```
+
+### Building from Source
+
+```bash
+# Build package
+python -m build
+
+# Install locally
+pip install dist/xibe_chat_cli-1.0.0-py3-none-any.whl
+```
+
+### Creating Executables
+
+```bash
+# Install PyInstaller
+pip install pyinstaller
+
+# Create executable
+pyinstaller --onefile --name xibe-chat xibe_chat.py
+```
+
+## 📦 Requirements
+
+- Python 3.8+
+- pyfiglet
+- python-dotenv
+- requests
+- rich
+- prompt-toolkit
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Pollinations AI](https://pollinations.ai) for the amazing AI API
+- [Rich](https://github.com/Textualize/rich) for the beautiful terminal interface
+- [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced input handling
+
+## 📞 Support
+
+- 📧 Email: your-email@example.com
+- 🐛 Issues: [GitHub Issues](https://github.com/iotserver24/xibe-chat-cli/issues)
+- 📖 Documentation: [GitHub Repository](https://github.com/iotserver24/xibe-chat-cli)
+
+---
+
+**Made with ❤️ by iotserver24**
+
+*Star this repository if you find it helpful!*
