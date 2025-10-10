@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/xibe-chat-cli.svg)](https://badge.fury.io/py/xibe-chat-cli)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://pypi.org/project/xibe-chat-cli/)
 
 A beautiful, feature-rich CLI application that brings AI text and image generation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
 
@@ -21,6 +21,7 @@ A beautiful, feature-rich CLI application that brings AI text and image generati
 - **Multiple Models**: Support for flux, kontext, turbo, nanobanana, and more
 - **High Quality**: 1024x1024 resolution with safety filtering
 - **Private Generation**: Images not shared in public feeds
+- **Premium Features**: No watermarks, NO rate limits!
 
 ### 💾 Smart Memory System
 - **Model Preferences**: Remembers your preferred AI models
@@ -49,11 +50,7 @@ xibe-chat
 xibe
 ```
 
-### One-line Install Script
-```bash
-# Download and run installer
-python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/iotserver24/xibe-chat-cli/main/install.py').read())"
-```
+
 
 ## 📖 Usage
 
@@ -94,17 +91,13 @@ You: /help
 
 ## ⚙️ Configuration
 
-### API Token (Optional but Recommended)
+### 🎯 No Setup Required!
 
-Set your API token for better rate limits and premium features:
+XIBE-CHAT CLI comes pre-configured with premium API access:
 
-```bash
-# Windows
-set API_TOKEN=your_token_here
-
-# macOS/Linux
-export API_TOKEN=your_token_here
-```
+- ✅ **No Watermarks**: Clean images without logos
+- ✅ **Enhanced Rate Limits**: Higher usage limits for better performance
+- ✅ **Private Generation**: Your images stay private
 
 ### Model Preferences
 
@@ -125,7 +118,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - **Safe Mode**: Strict NSFW filtering enabled
 - **Private**: Images not shared publicly
 - **High Quality**: 1024x1024 resolution
-- **No Watermarks**: Clean images (with API token)
+- **No Watermarks**: Clean images included
 
 ### Available Models
 - **flux**: High-quality general purpose
@@ -134,41 +127,19 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - **nanobanana**: Advanced image editing
 - **gptimage**: GPT-powered generation
 
-## 🔧 Development
+## 🔧 Technical Details
 
-### Setup Development Environment
+### Package Information
+- **Package**: xibe-chat-cli
+- **Version**: 0.5.1
+- **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
+- **License**: Proprietary
+- **Author**: iotserver24
 
-```bash
-# Clone the repository
-git clone https://github.com/iotserver24/xibe-chat-cli.git
-cd xibe-chat-cli
-
-# Install in development mode
-pip install -e .
-
-# Install development dependencies
-pip install -e ".[dev]"
-```
-
-### Building from Source
-
-```bash
-# Build package
-python -m build
-
-# Install locally
-pip install dist/xibe_chat_cli-1.0.0-py3-none-any.whl
-```
-
-### Creating Executables
-
-```bash
-# Install PyInstaller
-pip install pyinstaller
-
-# Create executable
-pyinstaller --onefile --name xibe-chat xibe_chat.py
-```
+### System Requirements
+- Python 3.8+
+- Windows, macOS, or Linux
+- Internet connection for AI services
 
 ## 📦 Requirements
 
@@ -179,19 +150,16 @@ pyinstaller --onefile --name xibe-chat xibe_chat.py
 - rich
 - prompt-toolkit
 
-## 🤝 Contributing
+## 📞 Support & Contact
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+For support, feature requests, or questions:
+- 📧 Email: iotserver24@gmail.com
+- 🐛 Issues: Contact via email
+- 💬 Feedback: We welcome your suggestions
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This is proprietary software. All rights reserved.
 
 ## 🙏 Acknowledgments
 
@@ -199,11 +167,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Rich](https://github.com/Textualize/rich) for the beautiful terminal interface
 - [Prompt Toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced input handling
 
-## 📞 Support
+## 📞 Additional Support
 
-- 📧 Email: your-email@example.com
-- 🐛 Issues: [GitHub Issues](https://github.com/iotserver24/xibe-chat-cli/issues)
-- 📖 Documentation: [GitHub Repository](https://github.com/iotserver24/xibe-chat-cli)
+- 📖 PyPI Package: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
+- 🔄 Updates: `pip install --upgrade xibe-chat-cli`
 
 ---
 
