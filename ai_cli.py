@@ -12,12 +12,28 @@ import json
 from pathlib import Path
 from datetime import datetime
 from packaging import version
-from analytics import (
-    track_session_start, track_text_generation, track_image_generation,
-    track_agent_mode, track_command_usage, track_update_check,
-    track_error, track_feature_usage, get_analytics_status,
-    enable_analytics, disable_analytics, set_analytics_server_url
-)
+# Import analytics functions with fallback for when module is not available
+try:
+    from analytics import (
+        track_session_start, track_text_generation, track_image_generation,
+        track_agent_mode, track_command_usage, track_update_check,
+        track_error, track_feature_usage, get_analytics_status,
+        enable_analytics, disable_analytics, set_analytics_server_url
+    )
+except ImportError:
+    # Fallback functions when analytics module is not available
+    def track_session_start(): pass
+    def track_text_generation(*args, **kwargs): pass
+    def track_image_generation(*args, **kwargs): pass
+    def track_agent_mode(*args, **kwargs): pass
+    def track_command_usage(*args, **kwargs): pass
+    def track_update_check(*args, **kwargs): pass
+    def track_error(*args, **kwargs): pass
+    def track_feature_usage(*args, **kwargs): pass
+    def get_analytics_status(): return {"enabled": False, "status": "not_available"}
+    def enable_analytics(): pass
+    def disable_analytics(): pass
+    def set_analytics_server_url(*args, **kwargs): pass
 
 try:
     import pyfiglet
@@ -42,7 +58,7 @@ CONFIG_FILE = Path("xibe_chat_config.json")
 API_TOKEN = "uNoesre5jXDzjhiY"
 
 # Current version
-CURRENT_VERSION = "0.7.0"
+CURRENT_VERSION = "0.7.1"
 
 
 
