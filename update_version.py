@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Script to update version in all project files
+Version update script for XIBE-CHAT CLI
+Updates version in ai_cli.py, setup.py, and pyproject.toml
 """
-import sys
+
 import re
+import sys
 
 
 def update_version_in_file(filepath, pattern, replacement, version):
