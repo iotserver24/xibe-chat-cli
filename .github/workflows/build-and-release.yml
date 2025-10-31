@@ -34,16 +34,8 @@ jobs:
         VERSION="${{ github.event.inputs.version }}"
         echo "Updating version to $VERSION"
 
-        # Update version in ai_cli.py
-        sed -i "s/CURRENT_VERSION = \".*\"/CURRENT_VERSION = \"$VERSION\"/" ai_cli.py
-
-        # Update version in setup.py
-        sed -i "s/    version=\".*\",/    version=\"$VERSION\",/" setup.py
-
-        # Update version in pyproject.toml
-        sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
-
-        echo "Version updated to $VERSION in all files"
+        # Use the version update script
+        python update_version.py "$VERSION"
 
         # Create and push tag for manual builds
         TAG_NAME="v$VERSION"
