@@ -343,17 +343,17 @@ def show_help_commands() -> None:
     # Input Methods
     input_methods = Panel(
         "⌨️ [bold]Input Methods:[/bold]\n\n"
-        "  [yellow]Natural Language[/yellow] - AI analyzes and decides: text or image\n"
-        "  [yellow]img: prompt[/yellow] - Direct image generation (fast)\n"
+        "  [yellow]Natural Language[/yellow] - AI analyzes and responds conversationally\n"
+        "  [yellow]img: prompt[/yellow] - Direct image generation with AI acknowledgment\n"
         "  [yellow]Multiline[/yellow] - Ctrl+N for new lines\n\n"
         "[dim]Smart Examples:[/dim]\n"
-        "[dim]• \"show me a picture of Paris\" → Image[/dim]\n"
-        "[dim]• \"what does quantum physics mean?\" → Text[/dim]\n"
-        "[dim]• \"draw a futuristic city\" → Image[/dim]\n"
-        "[dim]• \"explain machine learning\" → Text[/dim]\n"
-        "[dim]• \"img: a sunset over mountains\" → Fast Image[/dim]",
+        "[dim]• \"show me Paris\" → \"Sure! Here's Paris...\" + Image[/dim]\n"
+        "[dim]• \"what's quantum physics?\" → Text explanation[/dim]\n"
+        "[dim]• \"draw a dragon\" → \"Great idea! Creating...\" + Image[/dim]\n"
+        "[dim]• \"explain AI\" → Text explanation[/dim]\n"
+        "[dim]• \"img: sunset\" → \"Beautiful choice!...\" + Fast Image[/dim]",
         style="yellow",
-        title="[bold white]🧠 Smart Input[/bold white]",
+        title="[bold white]💬 Conversational AI[/bold white]",
         title_align="center",
         padding=(1, 2),
         border_style="yellow"
@@ -376,14 +376,15 @@ def show_help_commands() -> None:
     # Tips
     tips_panel = Panel(
         "💡 [bold]Pro Tips:[/bold]\n\n"
-        "  • [bold]AI-Powered Analysis:[/bold] System intelligently decides between text/images\n"
-        "  • [bold]Smart Prompts:[/bold] AI creates detailed image prompts automatically\n"
-        "  • [bold]Use 'img:' for speed:[/bold] Bypass analysis for instant image generation\n"
+        "  • [bold]Conversational AI:[/bold] AI responds naturally before generating images\n"
+        "  • [bold]Smart Image Prompts:[/bold] AI enhances your requests with vivid details\n"
+        "  • [bold]Natural Interaction:[/bold] Chat like with a human assistant\n"
+        "  • [bold]Fast 'img:' prefix:[/bold] Direct generation with AI acknowledgment\n"
         "  • Models change daily - use 'models' for current availability\n"
         "  • Conversation history limited to 10 exchanges for memory\n"
         "  • Generated images saved in 'generated_images' folder",
         style="magenta",
-        title="[bold white]🧠 Smart Features[/bold white]",
+        title="[bold white]💬 AI Conversations[/bold white]",
         title_align="center",
         padding=(1, 2),
         border_style="magenta"
@@ -644,9 +645,62 @@ def run_chat_interface() -> None:
 
             # Handle image generation requests
             if user_input.startswith('img:'):
-                # Direct image generation - bypass AI analysis for speed
+                # Direct image generation - fast path with AI acknowledgment
                 image_prompt = user_input[4:].strip()
                 if image_prompt:
+                    # Display user request
+                    user_panel = Panel(
+                        f"🎨 {image_prompt}",
+                        style="blue",
+                        title="[bold white]You[/bold white]",
+                        title_align="left",
+                        padding=(1, 2),
+                        border_style="blue"
+                    )
+                    console.print(user_panel)
+                    console.print()
+
+                    # Get AI to provide a conversational acknowledgment
+                    with console.status("[bold blue]🤖 Preparing response...[/bold blue]", spinner="dots"):
+                        ack_analysis = analyze_query_with_ai(f"I want you to generate an image of: {image_prompt}", token, selected_models['text'])
+
+                    ai_acknowledgment = ack_analysis.get('response', f"Sure! I'll generate an image of {image_prompt} for you.")
+
+                    # Add to conversation history
+                    conversation_history.append({"role": "user", "content": user_input})
+                    conversation_history.append({"role": "assistant", "content": ai_acknowledgment})
+
+                    # Keep only last 10 exchanges to avoid token limits
+                    if len(conversation_history) > 20:  # 10 exchanges = 20 messages
+                        conversation_history = conversation_history[-20:]
+
+                    # Display AI acknowledgment
+                    try:
+                        cleaned_ack = clean_response_for_markdown(ai_acknowledgment, user_input)
+                        ai_panel = Panel(
+                            Markdown(cleaned_ack, code_theme="monokai"),
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+                    except Exception as e:
+                        ai_panel = Panel(
+                            ai_acknowledgment,
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+
+                    console.print()
+
+                    # Now generate the image
+                    console.print(f"[dim]🎨 Generating image: {image_prompt[:60]}...[/dim]")
                     handle_image_generation(image_prompt, token, selected_models['image'])
                 else:
                     console.print("[red]Please provide a prompt after 'img:'[/red]")
@@ -656,9 +710,58 @@ def run_chat_interface() -> None:
                     analysis = analyze_query_with_ai(user_input, token, selected_models['text'])
 
                 if analysis.get('action') == 'image':
-                    # AI decided to generate an image
+                    # AI decided to generate an image - show conversational response first
+                    ai_response = analysis.get('response', 'Sure, I\'d be happy to generate that image for you!')
                     image_prompt = analysis.get('image_prompt', user_input)
-                    console.print(f"[dim]🤖 AI decided to generate an image: {image_prompt[:50]}...[/dim]")
+
+                    # Display AI's conversational response
+                    user_panel = Panel(
+                        user_input,
+                        style="blue",
+                        title="[bold white]You[/bold white]",
+                        title_align="left",
+                        padding=(1, 2),
+                        border_style="blue"
+                    )
+                    console.print(user_panel)
+                    console.print()
+
+                    # Add to conversation history
+                    conversation_history.append({"role": "user", "content": user_input})
+                    conversation_history.append({"role": "assistant", "content": ai_response})
+
+                    # Keep only last 10 exchanges to avoid token limits
+                    if len(conversation_history) > 20:  # 10 exchanges = 20 messages
+                        conversation_history = conversation_history[-20:]
+
+                    # Display AI response in a chat bubble
+                    try:
+                        cleaned_response = clean_response_for_markdown(ai_response, user_input)
+                        ai_panel = Panel(
+                            Markdown(cleaned_response, code_theme="monokai"),
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+                    except Exception as e:
+                        console.print(f"[dim]Markdown parsing failed: {e}[/dim]")
+                        ai_panel = Panel(
+                            ai_response,
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+
+                    console.print()
+
+                    # Now generate the image
+                    console.print(f"[dim]🎨 Generating image: {image_prompt[:60]}...[/dim]")
                     handle_image_generation(image_prompt, token, selected_models['image'])
                 else:
                     # AI decided to respond with text
@@ -1194,16 +1297,16 @@ def analyze_query_with_ai(user_input: str, token: str, text_model: str) -> dict:
         system_message = (
             "You are an AI assistant that analyzes user queries to determine if they should generate images or respond with text. "
             "Your task is to respond with a JSON object in this exact format:\n\n"
-            '{"action": "image", "image_prompt": "detailed image description here"}'
-            '\n\nor\n\n'
-            '{"action": "text", "response": "your text response here"}'
+            'For images: {"action": "image", "response": "your conversational reply here", "image_prompt": "detailed image description here"}'
+            '\n\nFor text: {"action": "text", "response": "your text response here"}'
             '\n\nRules:'
             '\n- If the user is asking to see, show, generate, create, draw, paint, or visualize something visual, set action to "image"'
             '\n- If the user is asking questions about appearance, looks, or what something looks like, set action to "image"'
-            '\n- For image generation, create a detailed, vivid prompt that captures what the user wants to see'
+            '\n- For image generation: provide a friendly, conversational "response" acknowledging the request, then a detailed "image_prompt"'
+            '\n- Keep responses conversational and helpful, like "Sure, I\'d be happy to generate an image of..."'
+            '\n- For image generation, create a detailed, vivid prompt that captures what the user wants to see (under 100 words)'
             '\n- If the query is about information, explanation, opinion, or non-visual content, set action to "text"'
-            '\n- Keep image prompts concise but descriptive (under 100 words)'
-            '\n- Do not add extra text or explanation - only return the JSON object'
+            '\n- Do not add extra text or explanation outside the JSON object'
         )
 
         # Build messages array
