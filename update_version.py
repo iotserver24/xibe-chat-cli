@@ -25,7 +25,7 @@ def update_version_in_file(filepath, pattern, replacement, version):
         
         print(f"✓ Updated {filepath}")
         return True
-    except Exception as e:
+    except (FileNotFoundError, PermissionError, IOError) as e:
         print(f"✗ Error updating {filepath}: {e}")
         return False
 
@@ -38,45 +38,32 @@ def main():
     
     version = sys.argv[1]
     
-    # Validate version format (basic check)
-    if not re.match(r'^\d+\.\d+\.\d+$', version):
-        print(f"Error: Invalid version format '{version}'. Expected format: X.Y.Z")
+    # Validate version format (supports semantic versioning with optional pre-release and build metadata)
+    if not re.match(r'^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$', version):
+        print(f"Error: Invalid version format '{version}'. Expected format: X.Y.Z[-prerelease][+build]")
+        print("Examples: 0.8.1, 1.0.0-alpha.1, 1.0.0+build.1, 1.0.0-beta.2+build.123")
         sys.exit(1)
     
     print(f"Updating version to {version}...")
     
+    # Define files to update
+    files_to_update = [
+        ('ai_cli.py', r'CURRENT_VERSION = "[^"]*"', 'CURRENT_VERSION = "{version}"'),
+        ('setup.py', r'version="[^"]*"', 'version="{version}"'),
+        ('pyproject.toml', r'version = "[^"]*"', 'version = "{version}"'),
+    ]
+    
     success_count = 0
+    total_files = len(files_to_update)
     
-    # Update ai_cli.py
-    if update_version_in_file(
-        'ai_cli.py',
-        r'CURRENT_VERSION = "[^"]*"',
-        'CURRENT_VERSION = "{version}"',
-        version
-    ):
-        success_count += 1
+    # Update each file
+    for filepath, pattern, replacement in files_to_update:
+        if update_version_in_file(filepath, pattern, replacement, version):
+            success_count += 1
     
-    # Update setup.py
-    if update_version_in_file(
-        'setup.py',
-        r'version="[^"]*"',
-        'version="{version}"',
-        version
-    ):
-        success_count += 1
+    print(f"\n✓ Successfully updated {success_count}/{total_files} files")
     
-    # Update pyproject.toml
-    if update_version_in_file(
-        'pyproject.toml',
-        r'version = "[^"]*"',
-        'version = "{version}"',
-        version
-    ):
-        success_count += 1
-    
-    print(f"\n✓ Successfully updated {success_count}/3 files")
-    
-    if success_count == 3:
+    if success_count == total_files:
         print(f"All version numbers updated to {version}")
         sys.exit(0)
     else:
