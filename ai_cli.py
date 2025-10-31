@@ -12,28 +12,6 @@ import json
 from pathlib import Path
 from datetime import datetime
 from packaging import version
-# Import analytics functions with fallback for when module is not available
-try:
-    from analytics import (
-        track_session_start, track_text_generation, track_image_generation,
-        track_agent_mode, track_command_usage, track_update_check,
-        track_error, track_feature_usage, get_analytics_status,
-        enable_analytics, disable_analytics, set_analytics_server_url
-    )
-except ImportError:
-    # Fallback functions when analytics module is not available
-    def track_session_start(): pass
-    def track_text_generation(*args, **kwargs): pass
-    def track_image_generation(*args, **kwargs): pass
-    def track_agent_mode(*args, **kwargs): pass
-    def track_command_usage(*args, **kwargs): pass
-    def track_update_check(*args, **kwargs): pass
-    def track_error(*args, **kwargs): pass
-    def track_feature_usage(*args, **kwargs): pass
-    def get_analytics_status(): return {"enabled": False, "status": "not_available"}
-    def enable_analytics(): pass
-    def disable_analytics(): pass
-    def set_analytics_server_url(*args, **kwargs): pass
 
 try:
     import pyfiglet
@@ -277,15 +255,9 @@ def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     
-    # Track session start (silent)
-    track_session_start()
-    
     # Check for updates in background
     with console.status("[bold green]Checking for updates...[/bold green]", spinner="dots"):
         latest_version, status = check_for_updates()
-    
-    # Track update check (silent)
-    track_update_check(latest_version, status)
     
     # Show update notification if available
     if status == "update_available":
@@ -371,12 +343,17 @@ def show_help_commands() -> None:
     # Input Methods
     input_methods = Panel(
         "⌨️ [bold]Input Methods:[/bold]\n\n"
-        "  [yellow]Normal Text[/yellow] - Just type and press Enter\n"
-        "  [yellow]img: prompt[/yellow] - Generate images\n"
+        "  [yellow]Natural Language[/yellow] - AI analyzes and decides: text or image\n"
+        "  [yellow]img: prompt[/yellow] - Direct image generation (fast)\n"
         "  [yellow]Multiline[/yellow] - Ctrl+N for new lines\n\n"
-        "[dim]Example: img: a beautiful sunset over mountains[/dim]",
+        "[dim]Smart Examples:[/dim]\n"
+        "[dim]• \"show me a picture of Paris\" → Image[/dim]\n"
+        "[dim]• \"what does quantum physics mean?\" → Text[/dim]\n"
+        "[dim]• \"draw a futuristic city\" → Image[/dim]\n"
+        "[dim]• \"explain machine learning\" → Text[/dim]\n"
+        "[dim]• \"img: a sunset over mountains\" → Fast Image[/dim]",
         style="yellow",
-        title="[bold white]⌨️ Input Methods[/bold white]",
+        title="[bold white]🧠 Smart Input[/bold white]",
         title_align="center",
         padding=(1, 2),
         border_style="yellow"
@@ -399,13 +376,14 @@ def show_help_commands() -> None:
     # Tips
     tips_panel = Panel(
         "💡 [bold]Pro Tips:[/bold]\n\n"
+        "  • [bold]AI-Powered Analysis:[/bold] System intelligently decides between text/images\n"
+        "  • [bold]Smart Prompts:[/bold] AI creates detailed image prompts automatically\n"
+        "  • [bold]Use 'img:' for speed:[/bold] Bypass analysis for instant image generation\n"
         "  • Models change daily - use 'models' for current availability\n"
-        "  • Premium features included for enhanced experience\n"
         "  • Conversation history limited to 10 exchanges for memory\n"
-        "  • Generated images saved in 'generated_images' folder\n"
-        "  • All models available with no additional setup",
+        "  • Generated images saved in 'generated_images' folder",
         style="magenta",
-        title="[bold white]💡 Pro Tips[/bold white]",
+        title="[bold white]🧠 Smart Features[/bold white]",
         title_align="center",
         padding=(1, 2),
         border_style="magenta"
@@ -525,11 +503,9 @@ def run_chat_interface() -> None:
 
             # Check for special commands
             if user_input.lower() == 'models':
-                track_command_usage('models')  # Silent tracking
                 show_available_models()
                 continue
             elif user_input.lower() == 'switch':
-                track_command_usage('switch')  # Silent tracking
                 switch_panel = Panel(
                     "🔄 Switching AI Models",
                     style="yellow",
@@ -557,7 +533,6 @@ def run_chat_interface() -> None:
                 console.print(success_panel)
                 continue
             elif user_input.lower() == '/new':
-                track_command_usage('new')  # Silent tracking
                 new_session_panel = Panel(
                     f"🆕 [green]New chat session started![/green]\n\n"
                     f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
@@ -573,12 +548,10 @@ def run_chat_interface() -> None:
                 conversation_history.clear()
                 continue
             elif user_input.lower() == '/clear':
-                track_command_usage('clear')  # Silent tracking
                 # Clear terminal and show logo with commands
                 show_clear_screen(selected_models)
                 continue
             elif user_input.lower() == '/help':
-                track_command_usage('help')  # Silent tracking
                 show_help_commands()
                 continue
             elif user_input.lower() == '/reset':
@@ -629,17 +602,13 @@ def run_chat_interface() -> None:
                 show_image_settings()
                 continue
             elif user_input.lower() == '/agent':
-                track_command_usage('agent')  # Silent tracking
-                track_agent_mode('mode_switch')  # Silent tracking
                 # Switch to agent mode
                 switch_to_agent_mode()
                 continue
             elif user_input.lower() == '/check-updates':
-                track_command_usage('check-updates')  # Silent tracking
                 # Manual update check
                 with console.status("[bold green]Checking for updates...[/bold green]", spinner="dots"):
                     latest_version, status = check_for_updates()
-                track_update_check(latest_version, status)  # Silent tracking
                 
                 if status == "update_available":
                     show_update_notification(latest_version)
@@ -675,16 +644,65 @@ def run_chat_interface() -> None:
 
             # Handle image generation requests
             if user_input.startswith('img:'):
-                image_prompt = user_input[4:].strip()  # Remove 'img:' prefix
+                # Direct image generation - bypass AI analysis for speed
+                image_prompt = user_input[4:].strip()
                 if image_prompt:
-                    track_image_generation(selected_models['image'], len(image_prompt))  # Silent tracking
                     handle_image_generation(image_prompt, token, selected_models['image'])
                 else:
                     console.print("[red]Please provide a prompt after 'img:'[/red]")
             else:
-                # Handle text generation with conversation history
-                track_text_generation(selected_models['text'], len(user_input), len(conversation_history))  # Silent tracking
-                handle_text_generation(user_input, token, conversation_history, selected_models['text'])
+                # Let AI analyze the query and decide
+                with console.status("[bold blue]🤖 Analyzing your request...[/bold blue]", spinner="dots"):
+                    analysis = analyze_query_with_ai(user_input, token, selected_models['text'])
+
+                if analysis.get('action') == 'image':
+                    # AI decided to generate an image
+                    image_prompt = analysis.get('image_prompt', user_input)
+                    console.print(f"[dim]🤖 AI decided to generate an image: {image_prompt[:50]}...[/dim]")
+                    handle_image_generation(image_prompt, token, selected_models['image'])
+                else:
+                    # AI decided to respond with text
+                    ai_response = analysis.get('response', 'I understand your request. How can I help you?')
+
+                    # Add to conversation history
+                    conversation_history.append({"role": "user", "content": user_input})
+                    conversation_history.append({"role": "assistant", "content": ai_response})
+
+                    # Keep only last 10 exchanges to avoid token limits
+                    if len(conversation_history) > 20:  # 10 exchanges = 20 messages
+                        conversation_history = conversation_history[-20:]
+
+                    # Display AI response in a chat bubble with better styling
+                    try:
+                        # Clean up the response for better markdown rendering
+                        cleaned_response = clean_response_for_markdown(ai_response, user_input)
+
+                        # Create AI response panel with enhanced styling
+                        ai_panel = Panel(
+                            Markdown(cleaned_response, code_theme="monokai"),
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+
+                    except Exception as e:
+                        # Fallback to plain text if markdown parsing fails
+                        console.print(f"[dim]Markdown parsing failed: {e}[/dim]")
+                        ai_panel = Panel(
+                            ai_response,
+                            style="green",
+                            title=f"[bold white]🤖 AI Assistant ({selected_models['text']})[/bold white]",
+                            title_align="right",
+                            padding=(1, 2),
+                            border_style="green"
+                        )
+                        console.print(ai_panel)
+
+                    # Add spacing after response for better readability
+                    console.print()
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Use 'exit' or 'quit' to end the session[/yellow]")
@@ -1160,6 +1178,85 @@ def get_available_image_models() -> list:
         return ['flux', 'kontext', 'turbo', 'nanobanana', 'gptimage']
 
 
+def analyze_query_with_ai(user_input: str, token: str, text_model: str) -> dict:
+    """Ask the AI to analyze if the query should generate an image or respond with text."""
+    try:
+        # Use text generation endpoint to analyze the query
+        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
+
+        url = f"{text_api_url}/openai"
+        # Append token as query parameter if available
+        if token:
+            sep = '&' if '?' in url else '?'
+            url = f"{url}{sep}token={urllib.parse.quote(token)}"
+
+        # System message instructing AI to analyze and decide
+        system_message = (
+            "You are an AI assistant that analyzes user queries to determine if they should generate images or respond with text. "
+            "Your task is to respond with a JSON object in this exact format:\n\n"
+            '{"action": "image", "image_prompt": "detailed image description here"}'
+            '\n\nor\n\n'
+            '{"action": "text", "response": "your text response here"}'
+            '\n\nRules:'
+            '\n- If the user is asking to see, show, generate, create, draw, paint, or visualize something visual, set action to "image"'
+            '\n- If the user is asking questions about appearance, looks, or what something looks like, set action to "image"'
+            '\n- For image generation, create a detailed, vivid prompt that captures what the user wants to see'
+            '\n- If the query is about information, explanation, opinion, or non-visual content, set action to "text"'
+            '\n- Keep image prompts concise but descriptive (under 100 words)'
+            '\n- Do not add extra text or explanation - only return the JSON object'
+        )
+
+        # Build messages array
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_input}
+        ]
+
+        # Build request payload
+        payload = {
+            "model": text_model,
+            "messages": messages,
+            "max_tokens": 200,
+            "temperature": 0.1  # Low temperature for consistent analysis
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "XIBE-CHAT-CLI/1.0"
+        }
+
+        # Add authentication if available
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+            headers["Referer"] = f"{text_api_url}/openai?token={urllib.parse.quote(token)}"
+
+        # Make request
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        response.raise_for_status()
+
+        result = response.json()
+        ai_response = result['choices'][0]['message']['content'].strip()
+
+        # Parse the JSON response
+        try:
+            parsed_response = json.loads(ai_response)
+            return parsed_response
+        except json.JSONDecodeError:
+            # If AI didn't return valid JSON, assume text response
+            return {
+                "action": "text",
+                "response": ai_response
+            }
+
+    except Exception as e:
+        # Fallback to simple text response if analysis fails
+        console.print(f"[dim]Query analysis failed: {e}, proceeding with text response[/dim]")
+        return {
+            "action": "text",
+            "response": "I'm here to help! What would you like to know or discuss?"
+        }
+
+
 def clean_response_for_markdown(response: str, user_prompt: str = "") -> str:
     """Clean AI response for better markdown rendering."""
     cleaned = response
@@ -1234,4 +1331,17 @@ def clean_response_for_markdown(response: str, user_prompt: str = "") -> str:
 
 
 if __name__ == "__main__":
+    # Quick test of AI analysis (uncomment to test)
+    # test_queries = [
+    #     "show me a picture of Paris",
+    #     "what does quantum physics mean?",
+    #     "draw a futuristic city",
+    #     "explain machine learning",
+    #     "generate an image of a sunset"
+    # ]
+    # token = get_api_token()
+    # for query in test_queries:
+    #     result = analyze_query_with_ai(query, token, "openai")
+    #     print(f"'{query}' -> Action: {result.get('action', 'unknown')}")
+
     main()

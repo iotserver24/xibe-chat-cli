@@ -8,7 +8,6 @@ import platform
 import subprocess
 import urllib.parse
 import time
-from pathlib import Path
 from datetime import datetime
 
 import requests
@@ -37,63 +36,129 @@ class CLIAgent:
         self.created_at = datetime.now()
         
     def start_session(self, visible_window: bool = False) -> bool:
-        """Start the CLI session."""
+        """Start the CLI session with improved cross-platform support."""
         try:
+            current_os = platform.system().lower()
+
             if self.cli_type == "powershell":
                 if visible_window:
                     # Open visible PowerShell window
-                    if platform.system() == "Windows":
+                    if current_os == "windows":
                         subprocess.Popen([
-                            "start", "powershell", "-NoExit", 
+                            "start", "powershell", "-NoExit",
                             "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green; Write-Host 'Working Directory: {self.working_dir}' -ForegroundColor Yellow"
                         ], shell=True)
                     else:
-                        # For non-Windows systems, try to open terminal
-                        subprocess.Popen(["gnome-terminal", "--", "powershell"], cwd=self.working_dir)
+                        # Cross-platform PowerShell (PowerShell Core)
+                        terminal_cmds = [
+                            ["gnome-terminal", "--", "pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green"],
+                            ["konsole", "-e", "pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green"],
+                            ["xterm", "-e", "pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green"],
+                            ["pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green"]  # Direct
+                        ]
+                        for cmd in terminal_cmds:
+                            try:
+                                subprocess.Popen(cmd, cwd=self.working_dir)
+                                break
+                            except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                                continue
+                        else:
+                            console.print("[yellow]No suitable terminal found for PowerShell. Trying direct execution...[/yellow]")
+                            subprocess.Popen(["pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'; Write-Host 'XIBE Agent PowerShell Session' -ForegroundColor Green"])
                     self.is_active = True
                     return True
                 else:
                     # Background PowerShell session
-                    self.process = subprocess.Popen(
-                        ["powershell", "-NoExit", "-Command", "cd '{}'".format(self.working_dir)],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True,
-                        cwd=self.working_dir
-                    )
+                    if current_os == "windows":
+                        self.process = subprocess.Popen(
+                            ["powershell", "-NoExit", "-Command", f"cd '{self.working_dir}'"],
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            cwd=self.working_dir
+                        )
+                    else:
+                        # Try PowerShell Core on Linux/Mac
+                        self.process = subprocess.Popen(
+                            ["pwsh", "-NoExit", "-Command", f"cd '{self.working_dir}'"],
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            cwd=self.working_dir
+                        )
+
             elif self.cli_type == "cmd":
                 if visible_window:
                     # Open visible CMD window
-                    if platform.system() == "Windows":
+                    if current_os == "windows":
                         subprocess.Popen([
-                            "start", "cmd", "/k", 
+                            "start", "cmd", "/k",
                             f"cd /d {self.working_dir} && echo XIBE Agent CMD Session && echo Working Directory: {self.working_dir}"
                         ], shell=True)
                     else:
-                        subprocess.Popen(["gnome-terminal", "--", "cmd"], cwd=self.working_dir)
+                        # Try to open CMD in a Linux terminal (rare but possible)
+                        terminal_cmds = [
+                            ["gnome-terminal", "--", "cmd"],
+                            ["konsole", "-e", "cmd"],
+                            ["xterm", "-e", "cmd"]
+                        ]
+                        for cmd in terminal_cmds:
+                            try:
+                                subprocess.Popen(cmd, cwd=self.working_dir)
+                                break
+                            except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                                continue
+                        else:
+                            console.print("[red]CMD is not available on this system[/red]")
+                            return False
                     self.is_active = True
                     return True
                 else:
-                    # Background CMD session
-                    self.process = subprocess.Popen(
-                        ["cmd", "/k"],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True,
-                        cwd=self.working_dir
-                    )
+                    # Background CMD session (Windows only)
+                    if current_os == "windows":
+                        self.process = subprocess.Popen(
+                            ["cmd", "/k"],
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            cwd=self.working_dir
+                        )
+                    else:
+                        console.print("[red]Background CMD sessions are only supported on Windows[/red]")
+                        return False
+
             elif self.cli_type in ["bash", "sh"]:
                 if visible_window:
-                    # Open visible bash terminal
-                    subprocess.Popen(["gnome-terminal", "--", "bash"], cwd=self.working_dir)
+                    # Open visible bash terminal with better terminal detection
+                    terminal_cmds = [
+                        ["gnome-terminal", "--", self.cli_type],
+                        ["konsole", "-e", self.cli_type],
+                        ["xterm", "-e", self.cli_type],
+                        ["xfce4-terminal", "--execute", self.cli_type],
+                        ["mate-terminal", "--execute", self.cli_type],
+                        ["lxterminal", "-e", self.cli_type],
+                        ["terminator", "-e", self.cli_type],
+                        [self.cli_type]  # Direct execution as fallback
+                    ]
+
+                    for cmd in terminal_cmds:
+                        try:
+                            subprocess.Popen(cmd, cwd=self.working_dir)
+                            break
+                        except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                            continue
+                    else:
+                        console.print(f"[yellow]No suitable terminal found. Trying direct {self.cli_type} execution...[/yellow]")
+                        subprocess.Popen([self.cli_type], cwd=self.working_dir)
                     self.is_active = True
                     return True
                 else:
-                    # Background bash session
+                    # Background bash/sh session
                     self.process = subprocess.Popen(
-                        ["bash"],
+                        [self.cli_type],
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -101,11 +166,12 @@ class CLIAgent:
                         cwd=self.working_dir
                     )
             else:
+                console.print(f"[red]Unsupported CLI type: {self.cli_type}[/red]")
                 return False
-                
+
             self.is_active = True
             return True
-            
+
         except Exception as e:
             console.print(f"[red]Error starting {self.cli_type} session: {e}[/red]")
             return False
@@ -193,6 +259,121 @@ def close_all_agent_sessions():
         session.close_session()
     agent_sessions.clear()
     active_agent_session = None
+
+
+def detect_available_cli_tools() -> list:
+    """Detect available CLI tools based on operating system and installation."""
+    available_tools = []
+    current_os = platform.system().lower()
+
+    # Check for PowerShell (cross-platform)
+    try:
+        if current_os == "windows":
+            # On Windows, check if PowerShell is available
+            result = subprocess.run(["powershell", "-Command", "Write-Host 'test'"],
+                                  capture_output=True, text=True, timeout=5, check=False)
+            if result.returncode == 0:
+                available_tools.append("powershell")
+        else:
+            # On Linux/Mac, try common PowerShell installations
+            powershell_paths = [
+                "/usr/bin/pwsh",  # PowerShell Core
+                "/usr/local/bin/pwsh",
+                "/opt/microsoft/powershell/7/pwsh",
+                "/snap/bin/pwsh",
+                "pwsh"  # In PATH
+            ]
+            for pwsh_path in powershell_paths:
+                try:
+                    result = subprocess.run([pwsh_path, "-Command", "Write-Host 'test'"],
+                                          capture_output=True, text=True, timeout=5, check=False)
+                    if result.returncode == 0:
+                        available_tools.append("powershell")
+                        break
+                except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                    continue
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        pass
+
+    # Check for CMD (Windows only)
+    if current_os == "windows":
+        try:
+            result = subprocess.run(["cmd", "/c", "echo test"],
+                                  capture_output=True, text=True, timeout=5, check=False)
+            if result.returncode == 0:
+                available_tools.append("cmd")
+        except (subprocess.SubprocessError, FileNotFoundError, OSError):
+            pass
+
+    # Check for bash (Unix-like systems and Windows with WSL/Git Bash)
+    try:
+        if current_os == "windows":
+            # On Windows, check for Git Bash or WSL
+            bash_paths = [
+                "C:\\Program Files\\Git\\bin\\bash.exe",
+                "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+                "C:\\msys64\\usr\\bin\\bash.exe",
+                "bash"  # In PATH (WSL or other)
+            ]
+            for bash_path in bash_paths:
+                try:
+                    result = subprocess.run([bash_path, "-c", "echo test"],
+                                          capture_output=True, text=True, timeout=5, check=False)
+                    if result.returncode == 0:
+                        available_tools.append("bash")
+                        break
+                except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                    continue
+        else:
+            # On Linux/Mac, bash should be available
+            result = subprocess.run(["bash", "-c", "echo test"],
+                                  capture_output=True, text=True, timeout=5, check=False)
+            if result.returncode == 0:
+                available_tools.append("bash")
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        pass
+
+    # Check for sh (fallback for Unix-like systems)
+    if current_os != "windows":
+        try:
+            result = subprocess.run(["sh", "-c", "echo test"],
+                                  capture_output=True, text=True, timeout=5, check=False)
+            if result.returncode == 0 and "bash" not in available_tools:
+                available_tools.append("sh")
+        except (subprocess.SubprocessError, FileNotFoundError, OSError):
+            pass
+
+    return available_tools
+
+
+def get_preferred_cli_type() -> str:
+    """Get the preferred CLI type based on OS and availability."""
+    available_tools = detect_available_cli_tools()
+    current_os = platform.system().lower()
+
+    if not available_tools:
+        return None
+
+    # Preference order based on OS and power
+    if current_os == "windows":
+        # Windows: PowerShell > CMD > bash (Git Bash/WSL)
+        if "powershell" in available_tools:
+            return "powershell"
+        elif "cmd" in available_tools:
+            return "cmd"
+        elif "bash" in available_tools:
+            return "bash"
+    else:
+        # Linux/Mac: bash > sh > PowerShell (if installed)
+        if "bash" in available_tools:
+            return "bash"
+        elif "sh" in available_tools:
+            return "sh"
+        elif "powershell" in available_tools:
+            return "powershell"
+
+    # Fallback to first available
+    return available_tools[0]
 
 
 def get_api_token() -> str:
@@ -385,13 +566,15 @@ def generate_agent_command(task: str, session: CLIAgent, conversation_history: l
 def show_agent_sessions() -> None:
     """Show active agent sessions."""
     if not agent_sessions:
+        # Show available CLI tools
+        available_tools = detect_available_cli_tools()
+        available_text = "\n".join([f"• [cyan]{tool}[/cyan]" for tool in available_tools]) if available_tools else "• [red]None detected[/red]"
+
         sessions_panel = Panel(
-            "ℹ️ [yellow]No active CLI sessions[/yellow]\n\n"
-            "Start a session with: agent: open\n"
-            "Examples:\n"
-            "• agent: open powershell\n"
-            "• agent: open bash\n"
-            "• agent: open cmd",
+            f"ℹ️ [yellow]No active CLI sessions[/yellow]\n\n"
+            f"[green]Available CLI tools on this system:[/green]\n{available_text}\n\n"
+            "Start a session with: agent: open <cli_type>\n"
+            "Or just say a task and I'll auto-start the best CLI!",
             style="yellow",
             title="[bold white]🤖 CLI Agent Sessions[/bold white]",
             title_align="center",
@@ -423,6 +606,24 @@ def show_agent_sessions() -> None:
 
 def show_agent_demo() -> None:
     """Show agent mode demo and instructions."""
+    # Get available CLI tools for personalized demo
+    available_tools = detect_available_cli_tools()
+    preferred_cli = get_preferred_cli_type()
+
+    cli_info = ""
+    if preferred_cli:
+        cli_display_name = {
+            "powershell": "PowerShell",
+            "cmd": "Command Prompt",
+            "bash": "Bash",
+            "sh": "Shell"
+        }.get(preferred_cli, preferred_cli.title())
+        cli_info = f"  • Your preferred CLI: [green]{cli_display_name}[/green]\n"
+    else:
+        cli_info = "  • [red]No CLI tools detected - manual setup required[/red]\n"
+
+    available_text = f"  • Available tools: {', '.join(available_tools) if available_tools else 'None detected'}\n" if available_tools else ""
+
     demo_panel = Panel(
         "🤖 Integrated Agent + Chat Mode Demo\n"
         "==================================================\n"
@@ -432,14 +633,18 @@ def show_agent_demo() -> None:
         "  • 'What is Python?' → Normal chat\n"
         "  • 'List all files here' → Task execution\n\n"
         "⚡ [bold]Advanced Commands:[/bold]\n"
-        "  • agent: open powershell visible - Start visible PowerShell\n"
+        "  • agent: open <cli_type> - Start CLI session\n"
         "  • agent: dir - Direct command execution\n"
         "  • /sessions - Show active CLI sessions\n"
         "  • /close-agent - Close all sessions\n\n"
+        f"🖥️ [bold]Your System:[/bold]\n"
+        f"{cli_info}"
+        f"{available_text}\n"
         "✨ [bold]Smart Features:[/bold]\n"
         "  • I automatically decide: Chat or Task?\n"
+        "  • Auto-detects best CLI for your system\n"
         "  • No need to specify 'agent:' for most things\n"
-        "  • I'll start PowerShell automatically when needed\n"
+        "  • I'll start the appropriate CLI automatically\n"
         "  • Seamless switching between chat and task execution\n\n"
         "💡 [bold]Try saying:[/bold] 'Create a new folder and add a file with hello world'",
         style="cyan",
@@ -485,9 +690,9 @@ def show_agent_help() -> None:
         "  [cyan]/sessions[/cyan] - Show active CLI sessions\n"
         "  [cyan]/close-agent[/cyan] - Close all agent sessions\n"
         "  [cyan]/demo[/cyan] - Show agent mode demo\n"
-        "  [cyan]agent: open <cli>[/cyan] - Start CLI session\n"
+        "  [cyan]agent: open <cli>[/cyan] - Start CLI session (powershell/cmd/bash/sh)\n"
         "  [cyan]agent: <command>[/cyan] - Execute command\n\n"
-        "[dim]Natural language tasks auto-detect agent mode[/dim]",
+        "[dim]Natural language tasks auto-detect agent mode and choose best CLI[/dim]",
         style="magenta",
         title="[bold white]🤖 Agent Commands[/bold white]",
         title_align="center",
@@ -514,10 +719,11 @@ def show_agent_help() -> None:
     smart_features = Panel(
         "🧠 [bold]Smart Features:[/bold]\n\n"
         "  [yellow]Auto-Detection[/yellow] - AI decides chat vs task\n"
-        "  [yellow]Auto-Session[/yellow] - Starts PowerShell when needed\n"
+        "  [yellow]CLI Auto-Selection[/yellow] - Chooses best CLI for your system\n"
+        "  [yellow]Auto-Session[/yellow] - Starts appropriate CLI when needed\n"
         "  [yellow]Visible Windows[/yellow] - See what AI is doing\n"
         "  [yellow]Error Recovery[/yellow] - Graceful error handling\n\n"
-        "[dim]Example: 'Create a folder' → Task execution[/dim]",
+        "[dim]Example: 'Create a folder' → Auto-starts best available CLI[/dim]",
         style="yellow",
         title="[bold white]🧠 Smart Features[/bold white]",
         title_align="center",
@@ -872,14 +1078,31 @@ def run_agent_mode() -> None:
     """Run the integrated agent mode interface."""
     # Show agent logo
     show_agent_logo()
-    
+
+    # Detect available CLI tools for personalized welcome
+    preferred_cli = get_preferred_cli_type()
+
+    system_info = ""
+    if preferred_cli:
+        cli_display_name = {
+            "powershell": "PowerShell",
+            "cmd": "Command Prompt",
+            "bash": "Bash",
+            "sh": "Shell"
+        }.get(preferred_cli, preferred_cli.title())
+        system_info = f"🖥️ [blue]Your preferred CLI: [green]{cli_display_name}[/green][/blue]\n\n"
+    else:
+        system_info = "🖥️ [red]No CLI tools detected - you'll need to set up manually[/red]\n\n"
+
     # Show welcome message
     welcome_panel = Panel(
         "🤖 [bold]Integrated Agent + Chat Mode[/bold]\n\n"
         "✨ [green]Smart Features:[/green]\n"
         "  • I can chat with you normally\n"
         "  • I can execute tasks automatically\n"
+        "  • Auto-detects the best CLI for your system\n"
         "  • Just tell me what you want - I'll decide!\n\n"
+        f"{system_info}"
         "🎯 [cyan]Examples:[/cyan]\n"
         "  • 'Hello, how are you?' → Chat\n"
         "  • 'Create a folder called test' → Task execution\n"
@@ -1016,14 +1239,26 @@ def run_agent_mode() -> None:
                 # Execute as agent task
                 execute_agent_task(user_input, conversation_history)
             elif decision == "task" and not get_active_agent_session():
-                # Need to start a session first
-                console.print("[yellow]💡 I can help you with that task! Let me start a PowerShell session first...[/yellow]")
-                session_id = create_agent_session("powershell", visible_window=True)
-                if session_id:
-                    console.print("[green]✅ PowerShell session started! Now executing your task...[/green]")
-                    execute_agent_task(user_input, conversation_history)
+                # Need to start a session first - use preferred CLI based on system
+                preferred_cli = get_preferred_cli_type()
+                if preferred_cli:
+                    cli_display_name = {
+                        "powershell": "PowerShell",
+                        "cmd": "Command Prompt",
+                        "bash": "Bash",
+                        "sh": "Shell"
+                    }.get(preferred_cli, preferred_cli.title())
+
+                    console.print(f"[yellow]💡 I can help you with that task! Let me start a {cli_display_name} session first...[/yellow]")
+                    session_id = create_agent_session(preferred_cli, visible_window=True)
+                    if session_id:
+                        console.print(f"[green]✅ {cli_display_name} session started! Now executing your task...[/green]")
+                        execute_agent_task(user_input, conversation_history)
+                    else:
+                        console.print(f"[red]❌ Failed to start {cli_display_name} session. I'll respond via chat instead.[/red]")
+                        handle_chat_response(user_input, conversation_history)
                 else:
-                    console.print("[red]❌ Failed to start PowerShell session. I'll respond via chat instead.[/red]")
+                    console.print("[red]❌ No compatible CLI tools found on this system. I'll respond via chat instead.[/red]")
                     handle_chat_response(user_input, conversation_history)
             else:
                 # Regular chat
