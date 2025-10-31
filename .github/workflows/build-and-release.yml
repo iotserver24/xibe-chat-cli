@@ -5,126 +5,215 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 0.8.1)'
+        required: false
+        type: string
+
+permissions:
+  contents: write  # Required to create releases, upload assets, and push tags
+  packages: write  # Required for PyPI publishing
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
+    - name: Update version (if manually triggered)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        echo "Updating version to $VERSION"
+
+        # Update version in ai_cli.py
+        sed -i "s/CURRENT_VERSION = \".*\"/CURRENT_VERSION = \"$VERSION\"/" ai_cli.py
+
+        # Update version in setup.py
+        sed -i "s/    version=\".*\",/    version=\"$VERSION\",/" setup.py
+
+        # Update version in pyproject.toml
+        sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+
+        echo "Version updated to $VERSION in all files"
+
+        # Create and push tag for manual builds
+        TAG_NAME="v$VERSION"
+        echo "Preparing tag: $TAG_NAME"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch --tags
+
+        # Check if tag exists and delete it if it does
+        if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+          echo "Tag $TAG_NAME already exists. Deleting old tag to create new one."
+          git tag -d "$TAG_NAME"
+          git push origin --delete "$TAG_NAME" || true
+          echo "Old tag deleted successfully"
+        fi
+
+        git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+        git push origin "$TAG_NAME"
+        echo "New tag $TAG_NAME created and pushed"
+
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install build twine
-        
+
     - name: Build package
       run: python -m build
-      
+
     - name: Check package
       run: twine check dist/*
-      
+
     - name: Publish to PyPI
       if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-        
+
     - name: Create Release
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      uses: actions/create-release@v1
+      id: create_release
+      if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.version != '')
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
+        name: ${{ github.event_name == 'workflow_dispatch' && format('Release v{0}', github.event.inputs.version) || format('Release {0}', github.ref_name) }}
         draft: false
         prerelease: false
+        generate_release_notes: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
         body: |
-          ## What's New
-          
-          ### Features
-          - AI-powered text and image generation
-          - Model memory system (remembers your preferences)
-          - Enhanced image generation with API parameters
-          - Rich terminal interface with beautiful formatting
-          - Multi-line input support
-          
-          ### Installation
-          
+          ## 🚀 XIBE-CHAT CLI ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
+
+          ### ✨ What's New
+
+          #### 🤖 AI-Powered Intelligence
+          - **Conversational AI**: AI responds naturally before generating images
+          - **Smart Query Analysis**: AI intelligently decides between text responses and image generation
+          - **Enhanced Image Prompts**: AI creates detailed, vivid prompts automatically
+          - **Natural Language Processing**: No need for special prefixes - just chat naturally!
+
+          #### 🎨 Advanced Image Generation
+          - **Intelligent Image Detection**: AI understands visual requests in natural language
+          - **Conversational Acknowledgments**: AI responds like a human assistant before creating images
+          - **Enhanced Prompts**: AI improves your image descriptions for better results
+          - **Multiple Models**: Support for Flux, Kontext, Turbo, NanoBanana, and GPT-Image
+
+          #### 💬 Improved User Experience
+          - **Rich Terminal Interface**: Beautiful formatting with Rich library
+          - **Model Memory System**: Remembers your AI model preferences
+          - **Multi-line Input**: Ctrl+N for new lines, Enter to send
+          - **Conversation History**: Maintains context across exchanges
+          - **Fast Direct Mode**: `img:` prefix for instant image generation
+
+          ### 📦 Installation
+
           **Via pip (recommended):**
           ```bash
           pip install xibe-chat-cli
           xibe-chat
           ```
-          
+
           **Quick alias:**
           ```bash
           xibe
           ```
-          
-          ### Usage
-          
+
+          ### 🎯 Usage Examples
+
           ```bash
           xibe-chat
           ```
-          
-          Then use commands like:
-          - Type your message for AI chat
-          - `img: your prompt` for image generation
-          - `/help` for all commands
-          - `/clear` to clear screen
-          - `/new` for new chat session
-          
-          ### Full Documentation
-          See [GitHub Repository](https://github.com/iotserver24/xibe-chat-cli) for complete documentation.
-          
+
+          **Natural Language:**
+          - `"show me a beautiful sunset"` → AI responds + generates image
+          - `"what does quantum physics mean?"` → AI explains
+          - `"draw a futuristic city"` → AI acknowledges + creates image
+
+          **Direct Mode:**
+          - `img: a landscape with mountains` → Fast image generation
+
+          **Commands:**
+          - `/help` - Show all commands
+          - `/clear` - Clear screen and show logo
+          - `/new` - Start fresh conversation
+          - `/reset` - Reset model preferences
+          - `models` - View available AI models
+          - `switch` - Change AI models interactively
+
+          ### 📚 Full Documentation
+          See [GitHub Repository](https://github.com/iotserver24/xibe-chat-cli) for complete documentation and examples.
+
   build-executables:
+    needs: build-and-publish
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        
+        include:
+          - os: ubuntu-latest
+            name: linux
+            ext: ""
+          - os: windows-latest
+            name: windows
+            ext: ".exe"
+          - os: macos-latest
+            name: macos
+            ext: ""
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pyinstaller -r requirements.txt
-        
+        python -m pip install pyinstaller rich requests pyfiglet packaging prompt_toolkit
+
     - name: Build executable
       shell: bash
       run: |
         pyinstaller --onefile --name xibe-chat ai_cli.py
         if [ "$RUNNER_OS" = "Windows" ]; then
-          mv dist/xibe-chat.exe dist/xibe-chat-windows.exe
+          mv dist/xibe-chat.exe dist/xibe-chat.exe
         elif [ "$RUNNER_OS" = "macOS" ]; then
-          mv dist/xibe-chat dist/xibe-chat-macos
+          mv dist/xibe-chat dist/xibe-chat
         else
-          mv dist/xibe-chat dist/xibe-chat-linux
+          mv dist/xibe-chat dist/xibe-chat
         fi
-        
-    - name: Upload executable
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      uses: actions/upload-release-asset@v1
+
+    - name: Create zip archive
+      shell: bash
+      run: |
+        cd dist
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          7z a -tzip xibe-chat-${{ matrix.name }}.zip xibe-chat.exe
+        else
+          zip xibe-chat-${{ matrix.name }}.zip xibe-chat
+        fi
+
+    - name: Upload executable to Release
+      if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.version != '')
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/
-        asset_name: xibe-chat-${{ matrix.os }}.zip
-        asset_content_type: application/zip
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
+        files: dist/xibe-chat-${{ matrix.name }}.zip
+        append_body: true
