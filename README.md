@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/xibe-chat-cli.svg)](https://badge.fury.io/py/xibe-chat-cli)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://pypi.org/project/xibe-chat-cli/)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/xibe-chat-cli.svg)](https://pypistats.org/packages/xibe-chat-cli)
 [![Downloads](https://pepy.tech/badge/xibe-chat-cli/month)](https://pepy.tech/project/xibe-chat-cli)
 
@@ -303,7 +303,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - **Package**: xibe-chat-cli
 - **Version**: 0.8.1 (Latest Release!)
 - **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
-- **License**: Proprietary
+- **License**: CC BY-NC-SA 4.0
 - **Author**: iotserver24
 
 ### System Requirements
@@ -377,7 +377,18 @@ For support, feature requests, or questions:
 
 ## 📄 License
 
-This is proprietary software. All rights reserved.
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
+
+**You are free to:**
+- **Share** — copy and redistribute the material in any medium or format
+- **Adapt** — remix, transform, and build upon the material
+
+**Under the following terms:**
+- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made
+- **NonCommercial** — You may not use the material for commercial purposes
+- **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license
+
+For more details, see the [LICENSE](LICENSE) file or visit [https://creativecommons.org/licenses/by-nc-sa/4.0/](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 ## 🙏 Acknowledgments
 

@@ -10,7 +10,7 @@ authors = [
 ]
 description = "XIBE-CHAT CLI - AI-powered terminal assistant for text and image generation"
 readme = "README.md"
-license = {text = "Proprietary"}
+license = {text = "CC BY-NC-SA 4.0"}
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
