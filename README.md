@@ -15,30 +15,42 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 ## 📸 Screenshots
 
 ### 💬 Chat Mode Interface
+
 ![XIBE-CHAT Interface](https://raw.githubusercontent.com/iotserver24/codex/refs/heads/master/chat.png)
 
 *Beautiful chat interface with AI-powered text generation and rich formatting*
 
 ### 🤖 Agent Mode Interface  
+
 ![XIBE Agent Mode](https://raw.githubusercontent.com/iotserver24/codex/refs/heads/master/agent.png)
 
 *Intelligent CLI automation with smart decision making and task execution*
 
-## 🆕 What's New in v0.8.1
+## 🆕 What's New in v0.9.0
+
+### 🚀 **Powered by Pollinations AI**
+
+- **Free & Unlimited**: Still runs completely free thanks to Pollinations AI
+- **New Models**: Access to Gemini 2.5 Flash Lite, OpenAI GPT-5 Mini, and more
+- **API Key Required**: Get your free API key from [https://enter.pollinations.ai](https://enter.pollinations.ai)
+- **Enhanced Reliability**: Improved connection stability and error handling
 
 ### 🤖 **AI-Powered Conversational Intelligence**
+
 - **Smart Query Analysis**: AI automatically understands your intent and decides between text responses or image generation
 - **Conversational Image Generation**: AI responds naturally before creating images (no more "img:" prefixes needed!)
 - **Enhanced Image Prompts**: AI creates detailed, vivid prompts for stunning results
 - **Natural Language Processing**: Just chat naturally - the AI figures out what you want
 
 ### 💬 **Conversational AI Responses**
+
 - **Human-like Interactions**: AI responds conversationally before generating images
 - **Contextual Acknowledgments**: "Sure! I'd be happy to generate an image of..." + beautiful image
 - **Intelligent Decision Making**: AI understands visual requests in natural language
 - **Seamless Experience**: Feels like chatting with a helpful human assistant who can create images
 
 ### 🚀 **Enhanced User Experience**
+
 - **No Prefixes Required**: Say "show me Paris" instead of "img: show me Paris"
 - **Faster Interactions**: Direct image generation while maintaining conversational flow
 - **Improved Model Selection**: Better AI model integration and performance
@@ -47,18 +59,21 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 ## ✨ Features
 
 ### 🤖 AI Text Generation
+
 - **Multiple AI Models**: Choose from various text generation models
 - **Conversation Memory**: Maintains context across multiple exchanges
 - **Rich Formatting**: Beautiful markdown rendering with syntax highlighting
 - **Model Switching**: Change models on the fly without losing chat history
 
 ### 🎯 **Conversational AI (NEW!)**
+
 - **Natural Language Understanding**: AI automatically understands your intent
 - **Smart Decision Making**: Automatically chooses between text responses and image generation
 - **Conversational Responses**: AI responds like a human assistant before creating images
 - **No Special Commands**: Just chat naturally - AI handles the rest!
 
 ### 🖼️ AI Image Generation
+
 - **Enhanced Prompts**: AI automatically improves your prompts for better results
 - **Multiple Models**: Support for flux, kontext, turbo, nanobanana, and more
 - **High Quality**: 1024x1024 resolution with safety filtering
@@ -66,11 +81,13 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 - **Premium Features**: No watermarks, NO rate limits!
 
 ### 💾 Smart Memory System
+
 - **Model Preferences**: Remembers your preferred AI models
 - **Auto-Load**: Uses saved preferences on startup
 - **Easy Reset**: Reset preferences anytime with `/reset`
 
 ### 🤖 AI Agent Mode
+
 - **Intelligent CLI Automation**: AI can execute commands and perform tasks automatically
 - **Smart Decision Making**: AI automatically decides whether to chat or execute tasks
 - **Visible PowerShell Integration**: Watch the AI work in real-time with visible CLI windows
@@ -79,6 +96,7 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 - **Enhanced Performance**: Faster task execution and improved reliability
 
 ### 🎨 Beautiful Interface
+
 - **Rich Terminal UI**: Beautiful ASCII art logo and colorful interface
 - **Multi-line Input**: Support for multi-line messages with `Ctrl+N`
 - **Command System**: Intuitive slash commands for all features
@@ -90,18 +108,18 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 ### Installation
 
 **Via pip (recommended):**
+
 ```bash
 pip install xibe-chat-cli
 ```
 
 **Run the CLI:**
+
 ```bash
 xibe-chat
 # or use the short alias
 xibe
 ```
-
-
 
 ## 📖 Usage
 
@@ -143,16 +161,19 @@ You: /help
 ### Input Methods
 
 #### 🎯 **Natural Language (NEW!)**
+
 - **Conversational AI**: Just chat naturally - AI understands and responds appropriately
 - **Smart Image Generation**: Say "show me a sunset" or "draw a dragon" - AI handles it automatically
 - **Intelligent Responses**: AI responds conversationally before generating images
 
 #### 📝 **Traditional Methods (Still Supported)**
+
 - **Normal Text**: Just type and press Enter for regular chat
 - **Multi-line**: Press `Ctrl+N` for new lines, Enter to send
 - **Direct Image Generation**: Use `img:` prefix for instant generation (e.g., `img: cute cat`)
 
 #### 💬 **Examples of Natural Language:**
+
 ```bash
 # Image Generation (Automatic)
 You: show me a beautiful sunset over Paris
@@ -197,11 +218,14 @@ You: Make a Python file with hello world
 ### 🤖 How Agent Mode Works
 
 #### **Smart Decision Making**
+
 The AI automatically decides whether your input should be:
+
 - **Chat Response**: Normal conversation
 - **Task Execution**: CLI automation
 
 #### **Natural Language Tasks**
+
 Just tell the AI what you want - it figures out how to do it:
 
 ```bash
@@ -215,6 +239,7 @@ Just tell the AI what you want - it figures out how to do it:
 ```
 
 #### **Visible PowerShell Integration**
+
 - **Auto-starts PowerShell** when tasks are detected
 - **Visible windows** so you can see what the AI is doing
 - **Real-time feedback** with command execution progress
@@ -236,16 +261,19 @@ Just tell the AI what you want - it figures out how to do it:
 ### ✨ Agent Mode Features
 
 #### **Automatic Session Management**
+
 - **Smart Detection**: AI decides when to start CLI sessions
 - **Auto-Recovery**: Gracefully handles session failures
 - **Session Persistence**: Sessions survive mode switches
 
 #### **Error Handling**
+
 - **Graceful Recovery**: Continues working even when commands fail
 - **User-Friendly Messages**: Clear feedback about what's happening
 - **Fallback Options**: Falls back to chat if automation fails
 
 #### **Visual Feedback**
+
 - **Decision Indicators**: Shows whether AI will chat or execute tasks
 - **Progress Tracking**: Real-time updates on task execution
 - **Command History**: See what commands were executed
@@ -253,6 +281,7 @@ Just tell the AI what you want - it figures out how to do it:
 ### 🎨 Agent Mode Interface
 
 When you switch to Agent Mode, you'll see:
+
 - **Orange gradient "XIBE AGENT" logo**
 - **Comprehensive welcome screen** with examples
 - **Smart decision indicators** for each input
@@ -260,7 +289,7 @@ When you switch to Agent Mode, you'll see:
 
 ## ⚙️ Configuration
 
-### 🎯 No Setup Required!
+### 🎯 No Setup Required
 
 XIBE-CHAT CLI comes pre-configured with premium API access:
 
@@ -284,6 +313,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 ## 🖼️ Image Generation Features
 
 ### Enhanced API Parameters
+
 - **Enhance**: AI improves your prompts automatically
 - **Safe Mode**: Strict NSFW filtering enabled
 - **Private**: Images not shared publicly
@@ -291,6 +321,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 - **No Watermarks**: Clean images included
 
 ### Available Models
+
 - **flux**: High-quality general purpose
 - **kontext**: Image-to-image editing
 - **turbo**: Fast generation
@@ -300,13 +331,15 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 ## 🔧 Technical Details
 
 ### Package Information
+
 - **Package**: xibe-chat-cli
-- **Version**: 0.8.1 (Latest Release!)
+- **Version**: 0.9.0 (Latest Release!)
 - **PyPI**: [https://pypi.org/project/xibe-chat-cli/](https://pypi.org/project/xibe-chat-cli/)
 - **License**: CC BY-NC-SA 4.0
 - **Author**: iotserver24
 
 ### System Requirements
+
 - Python 3.8+
 - Windows, macOS, or Linux
 - Internet connection for AI services
@@ -325,6 +358,7 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 ## 🏗️ Architecture
 
 ### Modular Design
+
 XIBE-CHAT CLI features a clean, modular architecture:
 
 - **`ai_cli.py`**: Main chat interface, AI-powered conversational intelligence, and smart image/text generation
@@ -335,26 +369,30 @@ XIBE-CHAT CLI features a clean, modular architecture:
 - **Seamless switching**: Switch between modes without losing state
 
 ### Agent Mode Components
+
 - **Smart Decision Engine**: AI-powered classification of user intent
 - **CLI Session Management**: Automatic PowerShell/terminal session handling
 - **Task Execution Engine**: Step-by-step command execution with feedback
 - **Error Recovery System**: Graceful handling of failures and edge cases
 
-## 🚀 AI-Powered Features in v0.8.1
+## 🚀 AI-Powered Features in v0.9.0
 
 ### 🤖 Conversational AI Intelligence
+
 - **Natural Language Processing**: AI understands and responds to natural human language
 - **Smart Intent Recognition**: Automatically detects when users want images vs. text responses
 - **Conversational Responses**: AI responds like a human assistant before generating content
 - **Enhanced Image Prompts**: AI creates detailed, vivid prompts for stunning visual results
 
 ### Enhanced User Experience
+
 - **No Prefixes Required**: Say "show me Paris" instead of "img: show me Paris"
 - **Faster Interactions**: Direct routing to appropriate AI services
 - **Conversational Flow**: Natural back-and-forth like chatting with a human
 - **Improved Responsiveness**: Smoother interactions with intelligent routing
 
 ### Technical Optimizations
+
 - **AI-Powered Decision Making**: Eliminates manual command prefixes and routing
 - **Optimized API Calls**: Smart routing reduces unnecessary requests
 - **Enhanced Error Handling**: Better recovery from AI service issues
@@ -368,10 +406,14 @@ If you find XIBE-CHAT useful, consider supporting its development:
 
 **Every contribution helps improve XIBE-CHAT for everyone! 🙏**
 
+> [!NOTE]
+> Donations are highly appreciated to keep this project alive and free!
+
 ## 📞 Support & Contact
 
 For support, feature requests, or questions:
-- 📧 Email: iotserver24@gmail.com
+
+- 📧 Email: <iotserver24@gmail.com>
 - 🐛 Issues: Contact via email
 - 💬 Feedback: We welcome your suggestions
 
@@ -380,10 +422,12 @@ For support, feature requests, or questions:
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
 
 **You are free to:**
+
 - **Share** — copy and redistribute the material in any medium or format
 - **Adapt** — remix, transform, and build upon the material
 
 **Under the following terms:**
+
 - **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made
 - **NonCommercial** — You may not use the material for commercial purposes
 - **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license

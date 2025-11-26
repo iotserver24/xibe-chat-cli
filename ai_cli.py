@@ -9,9 +9,21 @@ import subprocess
 import urllib.parse
 import re
 import json
+import time
 from pathlib import Path
 from datetime import datetime
-from packaging import version
+
+try:
+    from packaging import version
+except ImportError:
+    print("Error: packaging is required. Install it with: pip install packaging")
+    print("Or install all requirements with: pip install -r requirements.txt")
+    print("\nIf you're using a virtual environment, make sure it's activated:")
+    print("  Windows PowerShell: .\\.venv\\Scripts\\Activate.ps1")
+    print("  Windows CMD: .venv\\Scripts\\activate.bat")
+    print("  Linux/Mac: source .venv/bin/activate")
+    print("\nOr use the provided run scripts: run.bat (Windows) or run.ps1 (PowerShell)")
+    exit(1)
 
 try:
     import pyfiglet
@@ -32,11 +44,13 @@ console = Console()
 # Configuration file path
 CONFIG_FILE = Path("xibe_chat_config.json")
 
-#API token for premium features
-API_TOKEN = "uNoesre5jXDzjhiY"
+# Store API key in memory for current session (not saved to disk)
+_SESSION_API_KEY = None
+CHAT_COMPLETIONS_TIMEOUT = int(os.getenv("CHAT_COMPLETIONS_TIMEOUT", "60"))
+CHAT_COMPLETIONS_RETRIES = int(os.getenv("CHAT_COMPLETIONS_RETRIES", "2"))
 
 # Current version
-CURRENT_VERSION = "0.8.9"
+CURRENT_VERSION = "0.9.0"
 
 
 
@@ -83,37 +97,77 @@ def _build_gradient_logo(title: str) -> Text:
 def save_model_preferences(text_model: str, image_model: str) -> None:
     """Save the selected models to configuration file."""
     try:
-        config = {
-            "text_model": text_model,
-            "image_model": image_model,
-            "last_updated": datetime.now().isoformat()
-        }
+        # Load existing config
+        config = load_config()
+        config["text_model"] = text_model
+        config["image_model"] = image_model
+        config["last_updated"] = datetime.now().isoformat()
         
-        with open(CONFIG_FILE, 'w') as f:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
             
     except Exception as e:
         console.print(f"[dim]Could not save model preferences: {e}[/dim]")
 
 
+def load_config() -> dict:
+    """Load the configuration file."""
+    try:
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        console.print(f"[dim]Could not load config: {e}[/dim]")
+    
+    return {}
+
+
 def load_model_preferences() -> dict:
     """Load the saved model preferences from configuration file."""
     try:
-        if CONFIG_FILE.exists():
-            with open(CONFIG_FILE, 'r') as f:
-                config = json.load(f)
-                
-            # Validate that both models are present
-            if "text_model" in config and "image_model" in config:
-                return {
-                    "text": config["text_model"],
-                    "image": config["image_model"]
-                }
+        config = load_config()
+        
+        # Validate that both models are present
+        if "text_model" in config and "image_model" in config:
+            return {
+                "text": config["text_model"],
+                "image": config["image_model"]
+            }
     except Exception as e:
         console.print(f"[dim]Could not load model preferences: {e}[/dim]")
     
     # Return None if no valid config found
     return None
+
+
+def save_api_key(api_key: str) -> None:
+    """Persist the API key to the configuration file."""
+    try:
+        config = load_config()
+        config["api_key"] = api_key
+        config["api_key_saved_at"] = datetime.now().isoformat()
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        console.print(f"[dim]Could not save API key: {e}[/dim]")
+
+
+def load_saved_api_key() -> str:
+    """Load the API key from configuration."""
+    try:
+        config = load_config()
+        return config.get("api_key", "")
+    except Exception as e:
+        console.print(f"[dim]Could not load API key: {e}[/dim]")
+        return ""
+
+
+def is_publishable_key(api_key: str) -> bool:
+    """Return True if the key looks like a publishable/client-side key."""
+    if not api_key:
+        return False
+    lowered = api_key.lower()
+    return lowered.startswith("pk_") or lowered.startswith("plln_pk")
 
 
 def get_multiline_input() -> str:
@@ -175,9 +229,59 @@ def get_multiline_input() -> str:
         return full_input
 
 
-def get_api_token() -> str:
-    """Get the hardcoded API token for premium features."""
-    return API_TOKEN
+def get_api_key() -> str:
+    """Get the API key from session or config."""
+    global _SESSION_API_KEY
+    if _SESSION_API_KEY:
+        return _SESSION_API_KEY
+    saved_key = load_saved_api_key()
+    if saved_key:
+        _SESSION_API_KEY = saved_key
+    return _SESSION_API_KEY or ""
+
+
+def prompt_for_api_key(force: bool = False) -> str:
+    """Prompt user to enter their Pollinations API key and store it."""
+    global _SESSION_API_KEY
+    console.print()
+    console.print("[bold cyan]🔑 API Key Setup[/bold cyan]")
+    console.print("=" * 50)
+    console.print()
+    console.print("[yellow]To use XIBE-CHAT, you need an API key from enter.pollinations.ai[/yellow]")
+    console.print("[dim]Get your API key at: https://enter.pollinations.ai[/dim]")
+    console.print()
+    
+    while True:
+        try:
+            api_key = console.input("[bold cyan]Enter your Pollinations API key[/bold cyan]: ").strip()
+            
+            if not api_key:
+                console.print("[red]API key is required. Please enter a valid API key.[/red]")
+                continue
+            
+            # Validate API key format (basic check)
+            if len(api_key) < 10:
+                console.print("[red]API key seems too short. Please check and try again.[/red]")
+                continue
+            
+            # Store in memory and persist
+            _SESSION_API_KEY = api_key
+            save_api_key(api_key)
+            console.print("[green]✅ API key saved![/green]")
+            console.print()
+            return api_key
+            
+        except KeyboardInterrupt:
+            console.print("\n[red]API key entry cancelled.[/red]")
+            existing_key = get_api_key()
+            if force and not existing_key:
+                console.print("[red]API key is required to use XIBE-CHAT. Exiting...[/red]")
+                exit(1)
+            return existing_key
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            console.print("[red]Please try again.[/red]")
+            continue
 
 
 def check_for_updates() -> tuple[str, str]:
@@ -255,6 +359,10 @@ def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     
+    # Prompt for API key on first run (persisted to config)
+    if not get_api_key():
+        prompt_for_api_key(force=True)
+    
     # Check for updates in background
     with console.status("[bold green]Checking for updates...[/bold green]", spinner="dots"):
         latest_version, status = check_for_updates()
@@ -317,7 +425,8 @@ def show_help_commands() -> None:
         "  [cyan]/reset[/cyan] - Reset model preferences\n"
         "  [cyan]/image-settings[/cyan] - View image generation settings\n"
         "  [cyan]/agent[/cyan] - Switch to Agent Mode\n"
-        "  [cyan]/check-updates[/cyan] - Check for updates",
+        "  [cyan]/check-updates[/cyan] - Check for updates\n"
+        "  [cyan]/api-key[/cyan] - Update saved API key",
         style="green",
         title="[bold white]💬 Chat Commands[/bold white]",
         title_align="center",
@@ -466,8 +575,8 @@ def switch_to_agent_mode() -> None:
 
 def run_chat_interface() -> None:
     """Run the interactive chat interface."""
-    # Get authentication token
-    token = get_api_token()
+    # Get authentication API key
+    api_key = get_api_key()
     
     # Initialize conversation history
     conversation_history = []
@@ -520,10 +629,15 @@ def run_chat_interface() -> None:
                 # Save the new model preferences
                 save_model_preferences(selected_models['text'], selected_models['image'])
                 
+                # Extract image model name if it's a dict
+                image_model_display = selected_models['image']
+                if isinstance(image_model_display, dict):
+                    image_model_display = image_model_display.get('name', str(image_model_display))
+                
                 success_panel = Panel(
                     f"✅ [green]Successfully switched models![/green]\n\n"
                     f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
-                    f"🎨 [bold]Image Model:[/bold] {selected_models['image']}\n\n"
+                    f"🎨 [bold]Image Model:[/bold] {image_model_display}\n\n"
                     f"[dim]Chat history preserved • Preferences saved[/dim]",
                     style="green",
                     title="[bold white]🎉 Models Updated[/bold white]",
@@ -534,10 +648,15 @@ def run_chat_interface() -> None:
                 console.print(success_panel)
                 continue
             elif user_input.lower() == '/new':
+                # Extract image model name if it's a dict
+                image_model_display = selected_models['image']
+                if isinstance(image_model_display, dict):
+                    image_model_display = image_model_display.get('name', str(image_model_display))
+                
                 new_session_panel = Panel(
                     f"🆕 [green]New chat session started![/green]\n\n"
                     f"🤖 [bold]Text Model:[/bold] {selected_models['text']}\n"
-                    f"🎨 [bold]Image Model:[/bold] {selected_models['image']}\n\n"
+                    f"🎨 [bold]Image Model:[/bold] {image_model_display}\n\n"
                     f"[dim]Previous conversation history cleared[/dim]",
                     style="green",
                     title="[bold white]🆕 New Chat Session[/bold white]",
@@ -638,6 +757,11 @@ def run_chat_interface() -> None:
                     )
                     console.print(error_panel)
                 continue
+            elif user_input.lower() == '/api-key':
+                prompt_for_api_key(force=True)
+                api_key = get_api_key()
+                console.print("[green]API key updated successfully.[/green]")
+                continue
 
             # Check if empty input
             if not user_input:
@@ -662,7 +786,7 @@ def run_chat_interface() -> None:
 
                     # Get AI to provide a conversational acknowledgment
                     with console.status("[bold blue]🤖 Preparing response...[/bold blue]", spinner="dots"):
-                        ack_analysis = analyze_query_with_ai(f"I want you to generate an image of: {image_prompt}", token, selected_models['text'])
+                        ack_analysis = analyze_query_with_ai(f"I want you to generate an image of: {image_prompt}", api_key, selected_models['text'])
 
                     ai_acknowledgment = ack_analysis.get('response', f"Sure! I'll generate an image of {image_prompt} for you.")
 
@@ -701,13 +825,13 @@ def run_chat_interface() -> None:
 
                     # Now generate the image
                     console.print(f"[dim]🎨 Generating image: {image_prompt[:60]}...[/dim]")
-                    handle_image_generation(image_prompt, token, selected_models['image'])
+                    handle_image_generation(image_prompt, api_key, selected_models['image'])
                 else:
                     console.print("[red]Please provide a prompt after 'img:'[/red]")
             else:
                 # Let AI analyze the query and decide
                 with console.status("[bold blue]🤖 Analyzing your request...[/bold blue]", spinner="dots"):
-                    analysis = analyze_query_with_ai(user_input, token, selected_models['text'])
+                    analysis = analyze_query_with_ai(user_input, api_key, selected_models['text'])
 
                 if analysis.get('action') == 'image':
                     # AI decided to generate an image - show conversational response first
@@ -762,7 +886,7 @@ def run_chat_interface() -> None:
 
                     # Now generate the image
                     console.print(f"[dim]🎨 Generating image: {image_prompt[:60]}...[/dim]")
-                    handle_image_generation(image_prompt, token, selected_models['image'])
+                    handle_image_generation(image_prompt, api_key, selected_models['image'])
                 else:
                     # AI decided to respond with text
                     ai_response = analysis.get('response', 'I understand your request. How can I help you?')
@@ -814,12 +938,12 @@ def run_chat_interface() -> None:
             break
 
 
-def handle_text_generation(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> None:
+def handle_text_generation(prompt: str, api_key: str = "", conversation_history: list = None, model: str = None) -> None:
     """Handle text generation request and display response."""
     if conversation_history is None:
         conversation_history = []
     if model is None:
-        model = os.getenv('TEXT_MODEL', 'openai')
+        model = os.getenv('TEXT_MODEL', 'gemini')
     
     # Display user message in a chat bubble
     user_panel = Panel(
@@ -834,7 +958,7 @@ def handle_text_generation(prompt: str, token: str = "", conversation_history: l
     console.print()  # Add spacing
     
     with console.status(f"[bold green]🤖 AI ({model}) is thinking...[/bold green]", spinner="dots"):
-        response = generate_text(prompt, token, conversation_history, model)
+        response = generate_text(prompt, api_key, conversation_history, model)
 
     # Add to conversation history
     conversation_history.append({"role": "user", "content": prompt})
@@ -877,7 +1001,7 @@ def handle_text_generation(prompt: str, token: str = "", conversation_history: l
     console.print()
 
 
-def handle_image_generation(prompt: str, token: str = "", model: str = None) -> None:
+def handle_image_generation(prompt: str, api_key: str = "", model: str = None) -> None:
     """Handle image generation request and open the image."""
     if model is None:
         model = os.getenv('IMAGE_MODEL', 'flux')
@@ -895,7 +1019,7 @@ def handle_image_generation(prompt: str, token: str = "", model: str = None) -> 
     console.print()  # Add spacing
     
     with console.status(f"[bold green]🎨 AI ({model}) is creating your image...[/bold green]", spinner="dots"):
-        image_path = generate_image(prompt, token, model)
+        image_path = generate_image(prompt, api_key, model)
 
     if image_path:
         # Show success message with enhanced styling
@@ -927,64 +1051,135 @@ def handle_image_generation(prompt: str, token: str = "", model: str = None) -> 
         console.print(error_panel)
 
 
-def generate_text(prompt: str, token: str = "", conversation_history: list = None, model: str = None) -> str:
+def generate_text(prompt: str, api_key: str = "", conversation_history: list = None, model: str = None) -> str:
     """Generate text response for the given prompt."""
     if conversation_history is None:
         conversation_history = []
     if model is None:
-        model = os.getenv('TEXT_MODEL', 'openai')
+        model = os.getenv('TEXT_MODEL', 'gemini')
     
     try:
-        # Use text generation endpoint
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
+        if is_publishable_key(api_key):
+            warning = (
+                "Text generation via /v1/chat/completions requires a secret API key "
+                "(sk_...). Please create one at https://enter.pollinations.ai and "
+                "run /api-key to update your credentials."
+            )
+            console.print(f"[red]{warning}[/red]")
+            return "I’m ready once you provide a secret Pollinations API key (sk_…)."
+
+        if is_publishable_key(api_key):
+            warning = (
+                "Text generation via /v1/chat/completions requires a secret API key "
+                "(sk_...). Please create one at https://enter.pollinations.ai and "
+                "run /api-key to update your credentials."
+            )
+            console.print(f"[red]{warning}[/red]")
+            return "I’m ready once you provide a secret Pollinations API key (sk_…)."
         
-        url = f"{text_api_url}/openai"
-        # Append token as query parameter if available
-        if token:
-            sep = '&' if '?' in url else '?'
-            url = f"{url}{sep}token={urllib.parse.quote(token)}"
-        
-        # Build messages array with system context and conversation history
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
         messages = [{"role": "system", "content": build_system_message(text_model=model)}]
         for msg in conversation_history:
             messages.append({"role": msg["role"], "content": msg["content"]})
-        
-        # Add current prompt
         messages.append({"role": "user", "content": prompt})
-        
-        # Build request payload
-        payload = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": 1000,
-            "temperature": 0.7
-        }
-        
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "XIBE-CHAT-CLI/1.0"
-        }
-        
-        # Add authentication if available
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-            # Also send token as Referer
-            headers["Referer"] = f"{text_api_url}/openai?token={urllib.parse.quote(token)}"
-        
-        # Make request
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        response.raise_for_status()
-        
-        result = response.json()
-        return result['choices'][0]['message']['content'].strip()
 
-    except (ConnectionError, TimeoutError, ValueError, RuntimeError, requests.RequestException) as e:
+        result = call_chat_completions_api(
+            messages=messages,
+            api_key=api_key,
+            model=model,
+            timeout=CHAT_COMPLETIONS_TIMEOUT,
+            retries=CHAT_COMPLETIONS_RETRIES,
+            api_base_url=api_base_url,
+        )
+        if result:
+            return result['choices'][0]['message']['content'].strip()
+        raise RuntimeError("Chat completions result is empty.")
+
+    except (requests.HTTPError, ConnectionError, TimeoutError, ValueError, RuntimeError, requests.RequestException) as e:
         console.print(f"[red]Error generating text: {e}[/red]")
-        # Fallback to a simple response if service fails
+        simple_response = generate_simple_text(prompt, api_key)
+        if simple_response:
+            return simple_response
         return f"I understand you're asking about '{prompt[:50]}...'. However, I'm currently unable to connect to the AI service. Please try again later."
 
 
-def generate_image(prompt: str, token: str = "", model: str = None) -> str:
+def call_chat_completions_api(
+    messages: list,
+    api_key: str,
+    model: str,
+    timeout: int,
+    retries: int,
+    api_base_url: str,
+    payload_overrides: dict | None = None,
+) -> dict:
+    """Call the chat completions endpoint with retries."""
+    url = f"{api_base_url}/generate/v1/chat/completions"
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": 1000,
+        "temperature": 0.7
+    }
+    if payload_overrides:
+        payload.update(payload_overrides)
+
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "XIBE-CHAT-CLI/1.0"
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    attempt = 0
+    last_error = None
+    while attempt < max(1, retries):
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.Timeout as e:
+            last_error = e
+            attempt += 1
+            if attempt < retries:
+                time.sleep(min(2 ** attempt, 10))
+            else:
+                raise
+        except requests.RequestException as e:
+            last_error = e
+            raise
+    if last_error:
+        raise last_error
+    return {}
+
+
+def generate_simple_text(prompt: str, api_key: str) -> str:
+    """Fallback to the simple text endpoint when chat completions fails."""
+    api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+    encoded_prompt = urllib.parse.quote(prompt)
+    url = f"{api_base_url}/generate/text/{encoded_prompt}"
+
+    headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+    params = {}
+
+    if api_key:
+        if is_publishable_key(api_key):
+            params["key"] = api_key
+        else:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        text = response.text.strip()
+        if text:
+            return text
+    except requests.RequestException as e:
+        console.print(f"[dim]Simple text fallback failed: {e}[/dim]")
+    return ""
+
+
+def generate_image(prompt: str, api_key: str = "", model: str = None) -> str:
     """Generate image for the given prompt and return file path."""
     if model is None:
         model = os.getenv('IMAGE_MODEL', 'flux')
@@ -1000,14 +1195,14 @@ def generate_image(prompt: str, token: str = "", model: str = None) -> str:
         filename = f"ai_image_{prompt_hash}.jpg"
         image_path = os.path.join(images_dir, filename)
 
-        # URL encode the prompt
+        # URL encode the prompt for the URL path
         encoded_prompt = urllib.parse.quote(prompt)
-
-        # Build parameters according to API documentation
+        
+        # Build query parameters (prompt goes in URL path, not params)
         params = {
+            "model": model,
             "width": 1024,
             "height": 1024,
-            "model": model,
             "seed": 42,
             "enhance": "true",  # Enhance prompt using LLM for more detail
             "safe": "true",     # Enable strict NSFW filtering
@@ -1015,20 +1210,23 @@ def generate_image(prompt: str, token: str = "", model: str = None) -> str:
         }
 
         # Add premium features
-        if token:
+        if api_key:
             params["nologo"] = "true"
-            params["token"] = token
 
-        # Use the image generation endpoint
-        image_api_url = os.getenv('IMAGE_API_URL', 'https://image.pollinations.ai')
-        url = f"{image_api_url}/prompt/{encoded_prompt}"
+        # Use new Pollinations API image generation endpoint
+        # Format: /generate/image/{prompt}?model=flux&...
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        url = f"{api_base_url}/generate/image/{encoded_prompt}"
 
         # Make request with increased timeout for image generation
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
-        if token:
-            # Also send token via Authorization and Referer
-            headers["Authorization"] = f"Bearer {token}"
-            headers["Referer"] = f"{image_api_url}/prompt/{encoded_prompt}?token={urllib.parse.quote(token)}"
+        if api_key:
+            # Bearer API key authentication required for new API
+            headers["Authorization"] = f"Bearer {api_key}"
+        else:
+            # API key is required for the new API
+            console.print("[yellow]Warning: API key is required for the new Pollinations API[/yellow]")
+        
         response = requests.get(url, params=params, headers=headers, timeout=300)
         response.raise_for_status()
 
@@ -1073,10 +1271,15 @@ def show_available_models() -> None:
     # Text models
     console.print("\n[bold green]Text Generation Models:[/bold green]")
     try:
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
-        url = f"{text_api_url}/models"
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        url = f"{api_base_url}/generate/text/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+        # Add API key if available (may be required for some endpoints)
+        api_key = get_api_key()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
@@ -1115,10 +1318,15 @@ def show_available_models() -> None:
     # Image models
     console.print("\n[bold green]Image Generation Models:[/bold green]")
     try:
-        image_api_url = os.getenv('IMAGE_API_URL', 'https://image.pollinations.ai')
-        url = f"{image_api_url}/models"
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        url = f"{api_base_url}/generate/image/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+        # Add API key if available (may be required for some endpoints)
+        api_key = get_api_key()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
@@ -1130,6 +1338,14 @@ def show_available_models() -> None:
                     console.print(f"  🎨 [bold]{model}[/bold] [dim](requires input image for editing)[/dim]")
                 else:
                     console.print(f"  🎨 [bold]{model}[/bold]")
+            elif isinstance(model, dict):
+                # Handle dict response format
+                model_name = model.get('name', 'unknown')
+                description = model.get('description', '')
+                if model_name == 'nanobanana':
+                    console.print(f"  🎨 [bold]{model_name}[/bold] [dim]({description})[/dim]")
+                else:
+                    console.print(f"  🎨 [bold]{model_name}[/bold] [dim]- {description}[/dim]")
         
     except Exception as e:
         console.print(f"[red]Error fetching image models: {e}[/red]")
@@ -1191,16 +1407,30 @@ def choose_models() -> dict:
     # Choose image model
     console.print(f"\n[bold green]Image Generation Models:[/bold green]")
     for i, model in enumerate(image_models, 1):
-        if model == 'nanobanana':
-            console.print(f"  {i}. 🎨 {model} (requires input image for editing)")
-        else:
-            console.print(f"  {i}. 🎨 {model}")
+        if isinstance(model, str):
+            if model == 'nanobanana':
+                console.print(f"  {i}. 🎨 {model} (requires input image for editing)")
+            else:
+                console.print(f"  {i}. 🎨 {model}")
+        elif isinstance(model, dict):
+            # Handle dict response format
+            model_name = model.get('name', 'unknown')
+            description = model.get('description', '')
+            if model_name == 'nanobanana':
+                console.print(f"  {i}. 🎨 {model_name} (requires input image for editing)")
+            else:
+                console.print(f"  {i}. 🎨 {model_name} - {description}")
     
     while True:
         try:
             choice = console.input(f"\n[bold cyan]Choose image model (1-{len(image_models)}):[/bold cyan] ").strip()
             if choice.isdigit() and 1 <= int(choice) <= len(image_models):
-                selected_image = image_models[int(choice) - 1]
+                selected_model = image_models[int(choice) - 1]
+                # Extract model name if it's a dict
+                if isinstance(selected_model, dict):
+                    selected_image = selected_model.get('name', selected_model)
+                else:
+                    selected_image = selected_model
                 break
             else:
                 console.print("[red]Invalid choice. Please enter a valid number.[/red]")
@@ -1209,8 +1439,15 @@ def choose_models() -> dict:
             selected_image = "flux"
             break
     
+    # Extract image model name if it's a dict for display
+    image_model_display = selected_image
+    if isinstance(selected_image, dict):
+        image_model_display = selected_image.get('name', str(selected_image))
+        # Store just the name for saving
+        selected_image = image_model_display
+    
     console.print(f"\n[green]Selected Text Model: {selected_text}[/green]")
-    console.print(f"[green]Selected Image Model: {selected_image}[/green]")
+    console.print(f"[green]Selected Image Model: {image_model_display}[/green]")
     console.print()
     
     return {"text": selected_text, "image": selected_image}
@@ -1219,10 +1456,15 @@ def choose_models() -> dict:
 def get_available_text_models() -> list:
     """Get list of available text models."""
     try:
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
-        url = f"{text_api_url}/models"
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        url = f"{api_base_url}/generate/text/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+        # Add API key if available (may be required for some endpoints)
+        api_key = get_api_key()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
@@ -1252,19 +1494,24 @@ def get_available_text_models() -> list:
         console.print(f"[red]Error fetching text models: {e}[/red]")
         # Return default models
         return [
+            {'name': 'gemini', 'description': 'Gemini 2.5 Flash Lite', 'tier': 'seed'},
             {'name': 'openai', 'description': 'OpenAI GPT-5 Mini', 'tier': 'anonymous'},
-            {'name': 'mistral', 'description': 'Mistral Small 3.1 24B', 'tier': 'anonymous'},
-            {'name': 'gemini', 'description': 'Gemini 2.5 Flash Lite', 'tier': 'seed'}
+            {'name': 'mistral', 'description': 'Mistral Small 3.1 24B', 'tier': 'anonymous'}
         ]
 
 
 def get_available_image_models() -> list:
     """Get list of available image models."""
     try:
-        image_api_url = os.getenv('IMAGE_API_URL', 'https://image.pollinations.ai')
-        url = f"{image_api_url}/models"
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        url = f"{api_base_url}/generate/image/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
+        # Add API key if available (may be required for some endpoints)
+        api_key = get_api_key()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
@@ -1281,19 +1528,20 @@ def get_available_image_models() -> list:
         return ['flux', 'kontext', 'turbo', 'nanobanana', 'gptimage']
 
 
-def analyze_query_with_ai(user_input: str, token: str, text_model: str) -> dict:
+def analyze_query_with_ai(user_input: str, api_key: str, text_model: str) -> dict:
     """Ask the AI to analyze if the query should generate an image or respond with text."""
     try:
-        # Use text generation endpoint to analyze the query
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
+        if is_publishable_key(api_key):
+            console.print(
+                "[red]Query analysis requires a secret API key (sk_…). "
+                "Create one at https://enter.pollinations.ai and run /api-key to update it.[/red]"
+            )
+            return {
+                "action": "text",
+                "response": "I’m here to help once you switch to a secret Pollinations API key (sk_…)."
+            }
 
-        url = f"{text_api_url}/openai"
-        # Append token as query parameter if available
-        if token:
-            sep = '&' if '?' in url else '?'
-            url = f"{url}{sep}token={urllib.parse.quote(token)}"
-
-        # System message instructing AI to analyze and decide
+        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
         system_message = (
             "You are an AI assistant that analyzes user queries to determine if they should generate images or respond with text. "
             "Your task is to respond with a JSON object in this exact format:\n\n"
@@ -1309,35 +1557,19 @@ def analyze_query_with_ai(user_input: str, token: str, text_model: str) -> dict:
             '\n- Do not add extra text or explanation outside the JSON object'
         )
 
-        # Build messages array
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_input}
         ]
-
-        # Build request payload
-        payload = {
-            "model": text_model,
-            "messages": messages,
-            "max_tokens": 200,
-            "temperature": 0.1  # Low temperature for consistent analysis
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "XIBE-CHAT-CLI/1.0"
-        }
-
-        # Add authentication if available
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-            headers["Referer"] = f"{text_api_url}/openai?token={urllib.parse.quote(token)}"
-
-        # Make request
-        response = requests.post(url, json=payload, headers=headers, timeout=15)
-        response.raise_for_status()
-
-        result = response.json()
+        result = call_chat_completions_api(
+            messages=messages,
+            api_key=api_key,
+            model=text_model,
+            timeout=CHAT_COMPLETIONS_TIMEOUT,
+            retries=CHAT_COMPLETIONS_RETRIES,
+            api_base_url=api_base_url,
+            payload_overrides={"max_tokens": 200, "temperature": 0.1},
+        )
         ai_response = result['choices'][0]['message']['content'].strip()
 
         # Parse the JSON response
@@ -1351,9 +1583,25 @@ def analyze_query_with_ai(user_input: str, token: str, text_model: str) -> dict:
                 "response": ai_response
             }
 
-    except Exception as e:
+    except requests.HTTPError as e:
+        console.print(f"[red]HTTP error in query analysis: {e}[/red]")
+        
+        # If 400 Bad Request, it might be the model or payload. Try fallback to simple text.
+        if e.response.status_code == 400:
+             console.print("[yellow]Falling back to simple text response due to API error...[/yellow]")
+             return {
+                "action": "text",
+                "response": "I'm here to help! What would you like to know or discuss?"
+            }
+
         # Fallback to simple text response if analysis fails
-        console.print(f"[dim]Query analysis failed: {e}, proceeding with text response[/dim]")
+        return {
+            "action": "text",
+            "response": "I'm here to help! What would you like to know or discuss?"
+        }
+    except Exception as e:
+        console.print(f"[red]Error in query analysis: {e}[/red]")
+        # Fallback to simple text response if analysis fails
         return {
             "action": "text",
             "response": "I'm here to help! What would you like to know or discuss?"
