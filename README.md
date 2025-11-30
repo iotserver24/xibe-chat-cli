@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/xibe-chat-cli.svg)](https://badge.fury.io/py/xibe-chat-cli)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/xibe-chat-cli.svg)](https://pypistats.org/packages/xibe-chat-cli)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/xibe-chat-cli?period=total&units=NONE&left_color=BLACK&right_color=GREEN&left_text=Installls)](https://pepy.tech/projects/xibe-chat-cli)
 [![Downloads](https://pepy.tech/badge/xibe-chat-cli/month)](https://pepy.tech/project/xibe-chat-cli)
 
 A beautiful, feature-rich CLI application that brings AI text generation, image generation, and intelligent CLI automation directly to your terminal. Built with Python and featuring a rich interface powered by Rich library.
