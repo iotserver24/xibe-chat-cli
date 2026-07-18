@@ -6,7 +6,6 @@ XIBE-CHAT Agent Mode - CLI automation and control system
 import os
 import platform
 import subprocess
-import urllib.parse
 import time
 from datetime import datetime
 
@@ -378,7 +377,9 @@ def get_preferred_cli_type() -> str:
 
 def get_api_token() -> str:
     """Get the API token for agent mode."""
-    return "uNoesre5jXDzjhiY"  # Same token as main app
+    from ai_cli import get_api_key
+
+    return get_api_key()
 
 
 def build_agent_system_message(cli_session: CLIAgent, task: str) -> str:
@@ -531,11 +532,11 @@ def generate_agent_command(task: str, session: CLIAgent, conversation_history: l
         messages.append({"role": "user", "content": context})
         
         # Make API call
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
-        url = f"{text_api_url}/openai"
+        text_api_url = os.getenv('POLLINATIONS_API_URL', 'https://gen.pollinations.ai')
+        url = f"{text_api_url}/v1/chat/completions"
         
         payload = {
-            "model": "openai-large",  # Force openai-large for agent mode
+            "model": "openai",
             "messages": messages,
             "max_tokens": 200,
             "temperature": 0.3  # Lower temperature for more focused responses
@@ -550,8 +551,6 @@ def generate_agent_command(task: str, session: CLIAgent, conversation_history: l
         token = get_api_token()
         if token:
             headers["Authorization"] = f"Bearer {token}"
-            sep = '&' if '?' in url else '?'
-            url = f"{url}{sep}token={urllib.parse.quote(token)}"
         
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
@@ -706,7 +705,7 @@ def show_agent_help() -> None:
         "🤖 [bold]Model Commands:[/bold]\n\n"
         "  [cyan]models[/cyan] - View available AI models\n"
         "  [cyan]switch[/cyan] - Change text/image models\n\n"
-        "[dim]Agent mode uses openai-large for optimal performance[/dim]",
+        "[dim]Agent mode uses the openai model for task execution[/dim]",
         style="cyan",
         title="[bold white]🤖 Model Commands[/bold white]",
         title_align="center",
@@ -757,15 +756,10 @@ def show_image_settings() -> None:
     console.print("  [cyan]Width:[/cyan] 1024 pixels")
     console.print("  [cyan]Height:[/cyan] 1024 pixels") 
     console.print("  [cyan]Seed:[/cyan] 42 (for reproducible results)")
-    console.print("  [cyan]Enhance:[/cyan] true (AI-enhanced prompts)")
     console.print("  [cyan]Safe:[/cyan] true (Content filtering)")
-    console.print("  [cyan]Private:[/cyan] true (Not in public feed)")
-    console.print("  [cyan]No Watermark:[/cyan] true (Premium feature)")
     
     console.print("\n[bold green]Features:[/bold green]")
-    console.print("  • [yellow]Enhanced Prompts[/yellow] - AI improves your prompts for better results")
     console.print("  • [yellow]Safe Mode[/yellow] - Strict content filtering enabled")
-    console.print("  • [yellow]Private Generation[/yellow] - Images not shared publicly")
     console.print("  • [yellow]Consistent Results[/yellow] - Same seed for reproducible images")
     
     console.print("\n[bold green]Available Models:[/bold green]")
@@ -789,7 +783,7 @@ def show_available_models() -> None:
     
     # Text models
     console.print("\n[bold green]Text Generation Models:[/bold green]")
-    console.print("  🚀 [bold]openai-large[/bold] - OpenAI GPT-5 Mini (Agent Mode Default)")
+    console.print("  🚀 [bold]openai[/bold] - Agent Mode default")
     console.print("  🚀 [bold]mistral[/bold] - Mistral Small 3.1 24B")
     console.print("  🚀 [bold]gemini[/bold] - Gemini 2.5 Flash Lite")
     
@@ -801,7 +795,7 @@ def show_available_models() -> None:
     console.print("  🎨 [bold]nanobanana[/bold] - Advanced image editing")
     console.print("  🎨 [bold]gptimage[/bold] - GPT-powered generation")
     
-    console.print(f"\n[dim]Agent mode uses openai-large for optimal task execution and chat[/dim]")
+    console.print(f"\n[dim]Agent mode uses openai for task execution and chat[/dim]")
     console.print()
     console.print("[yellow]💡 Models change daily - use the 'models' command for current availability[/yellow]")
     console.print()
@@ -920,11 +914,11 @@ Examples:
 Respond with ONLY: CHAT or TASK"""
         
         # Make API call for decision
-        text_api_url = os.getenv('TEXT_API_URL', 'https://text.pollinations.ai')
-        url = f"{text_api_url}/openai"
+        text_api_url = os.getenv('POLLINATIONS_API_URL', 'https://gen.pollinations.ai')
+        url = f"{text_api_url}/v1/chat/completions"
         
         payload = {
-            "model": "openai-large",
+            "model": "openai",
             "messages": [{"role": "user", "content": decision_prompt}],
             "max_tokens": 10,
             "temperature": 0.1  # Very low temperature for consistent decisions
@@ -939,8 +933,6 @@ Respond with ONLY: CHAT or TASK"""
         token = get_api_token()
         if token:
             headers["Authorization"] = f"Bearer {token}"
-            sep = '&' if '?' in url else '?'
-            url = f"{url}{sep}token={urllib.parse.quote(token)}"
         
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
@@ -962,11 +954,11 @@ def handle_chat_response(user_input: str, conversation_history: list) -> None:
         from ai_cli import generate_text, build_system_message
         
         # Build agent-aware system message
-        agent_system_message = build_system_message("openai-large") + "\n\nYou are in Agent Mode. You can both chat and execute tasks. Be helpful and friendly!"
+        agent_system_message = build_system_message("openai") + "\n\nYou are in Agent Mode. You can both chat and execute tasks. Be helpful and friendly!"
         
         # Generate response
         with console.status(f"[bold green]🤖 AI Agent is thinking...[/bold green]", spinner="dots"):
-            response = generate_text(user_input, get_api_token(), conversation_history, "openai-large")
+            response = generate_text(user_input, get_api_token(), conversation_history, "openai")
         
         # Add to conversation history
         conversation_history.append({"role": "user", "content": user_input})
@@ -1194,7 +1186,7 @@ def run_agent_mode() -> None:
                     border_style="yellow"
                 )
                 console.print(switch_panel)
-                console.print("[yellow]Note: Agent mode uses openai-large for task execution and chat.[/yellow]")
+                console.print("[yellow]Note: Agent mode uses openai for task execution and chat.[/yellow]")
                 continue
             
             # Check if empty input
