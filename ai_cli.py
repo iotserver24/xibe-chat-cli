@@ -7,6 +7,7 @@ import os
 import platform
 import subprocess
 import urllib.parse
+import webbrowser
 import re
 import json
 import time
@@ -43,6 +44,8 @@ console = Console()
 
 # Configuration file path
 CONFIG_FILE = Path("xibe_chat_config.json")
+ENTER_URL = os.getenv("POLLINATIONS_ENTER_URL", "https://enter.pollinations.ai")
+GEN_URL = os.getenv("POLLINATIONS_API_URL", "https://gen.pollinations.ai")
 
 # Store API key in memory for current session (not saved to disk)
 _SESSION_API_KEY = None
@@ -103,8 +106,7 @@ def save_model_preferences(text_model: str, image_model: str) -> None:
         config["image_model"] = image_model
         config["last_updated"] = datetime.now().isoformat()
         
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2)
+        save_config(config)
             
     except Exception as e:
         console.print(f"[dim]Could not save model preferences: {e}[/dim]")
@@ -120,6 +122,22 @@ def load_config() -> dict:
         console.print(f"[dim]Could not load config: {e}[/dim]")
     
     return {}
+
+
+def save_config(config: dict) -> None:
+    """Save configuration and restrict access to the current user where supported."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    fd = os.open(CONFIG_FILE, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+    except (AttributeError, OSError):
+        pass
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2)
+    try:
+        CONFIG_FILE.chmod(0o600)
+    except OSError:
+        pass
 
 
 def load_model_preferences() -> dict:
@@ -146,8 +164,7 @@ def save_api_key(api_key: str) -> None:
         config = load_config()
         config["api_key"] = api_key
         config["api_key_saved_at"] = datetime.now().isoformat()
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2)
+        save_config(config)
     except Exception as e:
         console.print(f"[dim]Could not save API key: {e}[/dim]")
 
@@ -284,6 +301,94 @@ def prompt_for_api_key(force: bool = False) -> str:
             continue
 
 
+def login_with_pollinations(force: bool = False) -> str:
+    """Authorize this CLI with the user's Pollinations account via device flow."""
+    global _SESSION_API_KEY
+    request_data = {}
+    client_id = os.getenv("POLLINATIONS_CLIENT_ID", "").strip()
+    if client_id:
+        request_data["client_id"] = client_id
+
+    try:
+        response = requests.post(
+            f"{ENTER_URL}/api/device/code",
+            json=request_data,
+            timeout=15,
+        )
+        response.raise_for_status()
+        device = response.json()
+        device_code = device["device_code"]
+        user_code = device["user_code"]
+        verification_url = device.get("verification_uri_complete") or device["verification_uri"]
+        interval = max(int(device.get("interval", 5)), 1)
+        expires_in = max(int(device["expires_in"]), 1)
+    except (KeyError, TypeError, ValueError, requests.RequestException) as e:
+        console.print(f"[red]Could not start Pollinations login: {e}[/red]")
+        if force:
+            raise SystemExit(1)
+        return get_api_key()
+
+    console.print(f"\n[bold cyan]Authorize XIBE-CHAT[/bold cyan]")
+    console.print(f"Open [link={verification_url}]{verification_url}[/link]")
+    console.print(f"Enter code: [bold yellow]{user_code}[/bold yellow]")
+    try:
+        webbrowser.open(verification_url)
+    except webbrowser.Error:
+        pass
+
+    deadline = time.monotonic() + expires_in
+    token_request = {
+        "device_code": device_code,
+        "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+    }
+    if client_id:
+        token_request["client_id"] = client_id
+
+    console.print("[dim]Waiting for approval...[/dim]")
+    try:
+        while time.monotonic() < deadline:
+            time.sleep(interval)
+            token_response = requests.post(
+                f"{ENTER_URL}/api/device/token",
+                json=token_request,
+                timeout=15,
+            )
+            token_data = token_response.json()
+            access_token = token_data.get("access_token")
+            if token_response.ok and access_token:
+                if not access_token.startswith("sk_"):
+                    raise ValueError("Pollinations returned an unexpected token type")
+                _SESSION_API_KEY = access_token
+                save_api_key(access_token)
+                console.print("[green]✅ Pollinations account connected.[/green]")
+                return access_token
+
+            error = token_data.get("error")
+            if error == "authorization_pending":
+                continue
+            if error == "slow_down":
+                interval += 5
+                continue
+            if error == "access_denied":
+                console.print("[red]Authorization was denied.[/red]")
+                break
+            if error == "expired_token":
+                console.print("[red]The authorization code expired. Run /login to try again.[/red]")
+                break
+            console.print(f"[red]Pollinations login failed: {error or token_response.status_code}[/red]")
+            break
+        else:
+            console.print("[red]The authorization code expired. Run /login to try again.[/red]")
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Login cancelled.[/yellow]")
+    except (ValueError, requests.RequestException) as e:
+        console.print(f"[red]Pollinations login failed: {e}[/red]")
+
+    if force and not get_api_key():
+        raise SystemExit(1)
+    return get_api_key()
+
+
 def check_for_updates() -> tuple[str, str]:
     """Check for available updates on PyPI."""
     try:
@@ -359,7 +464,9 @@ def main() -> None:
     """Main function to run the AI CLI application."""
     show_splash_screen()
     
-    # Prompt for API key on first run (persisted to config)
+    # Connect the user's Pollinations account on first run.
+    if not get_api_key():
+        login_with_pollinations()
     if not get_api_key():
         prompt_for_api_key(force=True)
     
@@ -426,7 +533,8 @@ def show_help_commands() -> None:
         "  [cyan]/image-settings[/cyan] - View image generation settings\n"
         "  [cyan]/agent[/cyan] - Switch to Agent Mode\n"
         "  [cyan]/check-updates[/cyan] - Check for updates\n"
-        "  [cyan]/api-key[/cyan] - Update saved API key",
+        "  [cyan]/login[/cyan] - Connect your Pollinations account\n"
+        "  [cyan]/api-key[/cyan] - Import an existing API key",
         style="green",
         title="[bold white]💬 Chat Commands[/bold white]",
         title_align="center",
@@ -512,15 +620,10 @@ def show_image_settings() -> None:
     console.print("  [cyan]Width:[/cyan] 1024 pixels")
     console.print("  [cyan]Height:[/cyan] 1024 pixels") 
     console.print("  [cyan]Seed:[/cyan] 42 (for reproducible results)")
-    console.print("  [cyan]Enhance:[/cyan] true (AI-enhanced prompts)")
     console.print("  [cyan]Safe:[/cyan] true (Content filtering)")
-    console.print("  [cyan]Private:[/cyan] true (Not in public feed)")
-    console.print("  [cyan]No Watermark:[/cyan] true (Premium feature)")
     
     console.print("\n[bold green]Features:[/bold green]")
-    console.print("  • [yellow]Enhanced Prompts[/yellow] - AI improves your prompts for better results")
     console.print("  • [yellow]Safe Mode[/yellow] - Strict content filtering enabled")
-    console.print("  • [yellow]Private Generation[/yellow] - Images not shared publicly")
     console.print("  • [yellow]Consistent Results[/yellow] - Same seed for reproducible images")
     
     console.print("\n[bold green]Available Models:[/bold green]")
@@ -685,8 +788,12 @@ def run_chat_interface() -> None:
                 )
                 console.print(reset_panel)
                 try:
-                    if CONFIG_FILE.exists():
-                        CONFIG_FILE.unlink()
+                    config = load_config()
+                    preference_keys = {"text_model", "image_model", "last_updated"}
+                    if preference_keys.intersection(config):
+                        for key in preference_keys:
+                            config.pop(key, None)
+                        save_config(config)
                         success_panel = Panel(
                             "✅ [green]Model preferences reset successfully![/green]\n\n"
                             "[yellow]You will be asked to choose models again next time[/yellow]",
@@ -761,6 +868,9 @@ def run_chat_interface() -> None:
                 prompt_for_api_key(force=True)
                 api_key = get_api_key()
                 console.print("[green]API key updated successfully.[/green]")
+                continue
+            elif user_input.lower() == '/login':
+                api_key = login_with_pollinations()
                 continue
 
             # Check if empty input
@@ -1068,16 +1178,7 @@ def generate_text(prompt: str, api_key: str = "", conversation_history: list = N
             console.print(f"[red]{warning}[/red]")
             return "I’m ready once you provide a secret Pollinations API key (sk_…)."
 
-        if is_publishable_key(api_key):
-            warning = (
-                "Text generation via /v1/chat/completions requires a secret API key "
-                "(sk_...). Please create one at https://enter.pollinations.ai and "
-                "run /api-key to update your credentials."
-            )
-            console.print(f"[red]{warning}[/red]")
-            return "I’m ready once you provide a secret Pollinations API key (sk_…)."
-        
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        api_base_url = GEN_URL
         messages = [{"role": "system", "content": build_system_message(text_model=model)}]
         for msg in conversation_history:
             messages.append({"role": msg["role"], "content": msg["content"]})
@@ -1113,7 +1214,7 @@ def call_chat_completions_api(
     payload_overrides: dict | None = None,
 ) -> dict:
     """Call the chat completions endpoint with retries."""
-    url = f"{api_base_url}/generate/v1/chat/completions"
+    url = f"{api_base_url}/v1/chat/completions"
 
     payload = {
         "model": model,
@@ -1155,9 +1256,9 @@ def call_chat_completions_api(
 
 def generate_simple_text(prompt: str, api_key: str) -> str:
     """Fallback to the simple text endpoint when chat completions fails."""
-    api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+    api_base_url = GEN_URL
     encoded_prompt = urllib.parse.quote(prompt)
-    url = f"{api_base_url}/generate/text/{encoded_prompt}"
+    url = f"{api_base_url}/text/{encoded_prompt}"
 
     headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
     params = {}
@@ -1204,19 +1305,13 @@ def generate_image(prompt: str, api_key: str = "", model: str = None) -> str:
             "width": 1024,
             "height": 1024,
             "seed": 42,
-            "enhance": "true",  # Enhance prompt using LLM for more detail
-            "safe": "true",     # Enable strict NSFW filtering
-            "private": "true"   # Prevent image from appearing in public feed
+            "safe": "true"     # Enable strict NSFW filtering
         }
 
-        # Add premium features
-        if api_key:
-            params["nologo"] = "true"
-
         # Use new Pollinations API image generation endpoint
-        # Format: /generate/image/{prompt}?model=flux&...
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
-        url = f"{api_base_url}/generate/image/{encoded_prompt}"
+        # Format: /image/{prompt}?model=flux&...
+        api_base_url = GEN_URL
+        url = f"{api_base_url}/image/{encoded_prompt}"
 
         # Make request with increased timeout for image generation
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
@@ -1271,8 +1366,8 @@ def show_available_models() -> None:
     # Text models
     console.print("\n[bold green]Text Generation Models:[/bold green]")
     try:
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
-        url = f"{api_base_url}/generate/text/models"
+        api_base_url = GEN_URL
+        url = f"{api_base_url}/text/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
         # Add API key if available (may be required for some endpoints)
@@ -1318,8 +1413,8 @@ def show_available_models() -> None:
     # Image models
     console.print("\n[bold green]Image Generation Models:[/bold green]")
     try:
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
-        url = f"{api_base_url}/generate/image/models"
+        api_base_url = GEN_URL
+        url = f"{api_base_url}/image/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
         # Add API key if available (may be required for some endpoints)
@@ -1456,8 +1551,8 @@ def choose_models() -> dict:
 def get_available_text_models() -> list:
     """Get list of available text models."""
     try:
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
-        url = f"{api_base_url}/generate/text/models"
+        api_base_url = GEN_URL
+        url = f"{api_base_url}/text/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
         # Add API key if available (may be required for some endpoints)
@@ -1503,8 +1598,8 @@ def get_available_text_models() -> list:
 def get_available_image_models() -> list:
     """Get list of available image models."""
     try:
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
-        url = f"{api_base_url}/generate/image/models"
+        api_base_url = GEN_URL
+        url = f"{api_base_url}/image/models"
         
         headers = {"User-Agent": "XIBE-CHAT-CLI/1.0"}
         # Add API key if available (may be required for some endpoints)
@@ -1541,7 +1636,7 @@ def analyze_query_with_ai(user_input: str, api_key: str, text_model: str) -> dic
                 "response": "I’m here to help once you switch to a secret Pollinations API key (sk_…)."
             }
 
-        api_base_url = os.getenv('POLLINATIONS_API_URL', 'https://enter.pollinations.ai/api')
+        api_base_url = GEN_URL
         system_message = (
             "You are an AI assistant that analyzes user queries to determine if they should generate images or respond with text. "
             "Your task is to respond with a JSON object in this exact format:\n\n"

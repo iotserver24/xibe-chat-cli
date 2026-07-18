@@ -32,7 +32,7 @@ A beautiful, feature-rich CLI application that brings AI text generation, image 
 
 - **Free & Unlimited**: Still runs completely free thanks to Pollinations AI
 - **New Models**: Access to Gemini 2.5 Flash Lite, OpenAI GPT-5 Mini, and more
-- **API Key Required**: Get your free API key from [https://enter.pollinations.ai](https://enter.pollinations.ai)
+- **Bring Your Own Pollen**: Sign in to Pollinations from the CLI and use your own balance
 - **Enhanced Reliability**: Improved connection stability and error handling
 
 ### 🤖 **AI-Powered Conversational Intelligence**
@@ -154,6 +154,7 @@ You: /help
 | `/reset` | Reset saved model preferences |
 | `/image-settings` | View image generation settings |
 | `/agent` | Switch to Agent Mode |
+| `/login` | Connect your Pollinations account |
 | `models` | Show available AI models |
 | `switch` | Change AI models |
 | `exit/quit` | End the session |
@@ -289,14 +290,17 @@ When you switch to Agent Mode, you'll see:
 
 ## ⚙️ Configuration
 
-### 🎯 No Setup Required
+### 🔐 Pollinations login
 
-XIBE-CHAT CLI comes pre-configured with premium API access:
+On first launch, XIBE-CHAT opens the Pollinations device authorization page and
+shows a short code. Approve it in your browser to connect your own Pollinations
+account. The delegated key is saved in the existing `xibe_chat_config.json`
+configuration file with user-only permissions where the operating system
+supports them.
 
-- ✅ **No Watermarks**: Clean images without logos
-- ✅ **Enhanced Rate Limits**: Higher usage limits for better performance
-- ✅ **Private Generation**: Your images stay private
-- ✅ **Optimized Performance**: Faster response times and improved reliability
+Run `/login` whenever you want to reconnect. App developers may set
+`POLLINATIONS_CLIENT_ID` to their Pollinations public key for attribution; it is
+optional for local installs.
 
 ### Model Preferences
 
@@ -312,13 +316,11 @@ Your preferred models are automatically saved in `xibe_chat_config.json`:
 
 ## 🖼️ Image Generation Features
 
-### Enhanced API Parameters
+### Image settings
 
-- **Enhance**: AI improves your prompts automatically
 - **Safe Mode**: Strict NSFW filtering enabled
-- **Private**: Images not shared publicly
 - **High Quality**: 1024x1024 resolution
-- **No Watermarks**: Clean images included
+- **Consistent Results**: A fixed seed provides reproducible images
 
 ### Available Models
 
